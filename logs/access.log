@@ -1,0 +1,9 @@
+2023-08-14 19:11:18,877 [main] ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2023-08-14 19:11:18,917 [main] 7 mappings in 'requestMappingHandlerMapping'
+2023-08-14 19:11:18,944 [main] ControllerAdvice beans: 0 @ExceptionHandler, 1 ResponseBodyAdvice
+2023-08-14 19:18:02,080 [main] ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2023-08-14 19:18:02,115 [main] 7 mappings in 'requestMappingHandlerMapping'
+2023-08-14 19:18:02,143 [main] ControllerAdvice beans: 0 @ExceptionHandler, 1 ResponseBodyAdvice
+2023-08-14 19:21:35,629 [main] ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2023-08-14 19:21:35,666 [main] 7 mappings in 'requestMappingHandlerMapping'
+2023-08-14 19:21:35,694 [main] ControllerAdvice beans: 0 @ExceptionHandler, 1 ResponseBodyAdvice

@@ -1,0 +1,28 @@
+# 서버 포트 설정
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:keystore.jks
+    key-store-password: 123456
+    key-alias: 1
+
+# database 연동 설정
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/db_book?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: rocjrdlsemf1234!H
+  thymeleaf:
+    check-template-location: false
+
+  # spring data jpa 설정
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
