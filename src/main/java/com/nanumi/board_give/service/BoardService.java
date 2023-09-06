@@ -7,10 +7,7 @@ import com.nanumi.board_give.entity.UsersLikesEntity;
 import com.nanumi.board_give.repository.BoardRepository;
 import com.nanumi.board_give.repository.UsersLikesRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -40,15 +37,11 @@ public class BoardService {
 
     //[#2. (타인) 나눔 게시글 전체 조회]
     @Transactional
-    public List<BoardDTO> give_posting_findAll() {
-        List<BoardEntity> boardEntityList = boardRepository.findAll(); //리포지토리에서 데이터들은 List 형태의 Entity 가 넘어오게 된다.
+    public Page<BoardDTO> give_posting_findAll(Pageable pageable) {
+        Page<BoardEntity> boardEntityList = boardRepository.findAll(pageable); //리포지토리에서 데이터들은 List 형태의 Entity 가 넘어오게 된다.
 
         // Entity -> Dto 로 옮겨 닮아서, controller 로 반환해줘야 한다.
-        List<BoardDTO> boardDTOList = new ArrayList<>(); // 새로운 ArrayList 선언
-        for (BoardEntity boardEntity : boardEntityList) { //foreach 반복문을 이용해서, 데이터들을 하나식 꺼내서 boardEntity 객체에 담는다.
-            boardDTOList.add(BoardDTO.toBoardDTO(boardEntity)); //boardEntity -> boardDTO 로 바꿔서 boardDTOList 에 하나씩 주입
-        }
-        return boardDTOList; //컨트롤러로 반환.
+        return new PageImpl<>(boardEntityList.stream().map(BoardDTO::toBoardDTO).collect(Collectors.toList()), pageable, boardEntityList.getTotalElements());
     }
 
     //-------------------------------------------------------------------------------------------------------
@@ -65,12 +58,9 @@ public class BoardService {
 
     //[#4. (개인) 나눔 게시글 전체 조회] - BoardRepository 사용
     @Transactional
-    public List<BoardDTO> findAllPostingsByUserSeq(Long user_seq) {
-        List<BoardEntity> boardEntityList = boardRepository.findAllByUserSeq(user_seq); // boardRepository 에서 findAllByUserId 메서드를 호출하여 userId에 해당하는 회원이 작성한 모든 게시글 데이터를 boardEntityList 에 저장
-        List<BoardDTO> boardDTOList = boardEntityList.stream() //List<BoardDTO>로 변환하기 위해 Java Stream 을 사용하여 각 BoardEntity 객체를 BoardDTO.toBoardDTO 메서드를 사용하여 변환한 후
-                .map(BoardDTO::toBoardDTO)
-                .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
-        return boardDTOList;
+    public Page<BoardDTO> findAllPostingsByUserSeq(Long user_seq, Pageable pageable) {
+        Page<BoardEntity> boardEntityPage = boardRepository.findAllByUserSeq(user_seq, pageable); // Pageable 객체 추가
+        return boardEntityPage.map(BoardDTO::toBoardDTO); // 각 BoardEntity 객체를 BoardDTO로 변환한 후 페이지 형태로 반환
     }
 
 
@@ -79,9 +69,9 @@ public class BoardService {
 
     //[#6. (개인) 나눔 게시글 수정]
     @Transactional
-    public void updatePartOfBoard(BoardDTO boardDTO) { //수정된 게시글 데이터를 BoardDTO 객체로 받아온다.
+    public void updatePartOfBoard(Long board_give_id, BoardDTO boardDTO) { //수정된 게시글 데이터를 BoardDTO 객체로 받아온다.
         //요청된 게시물의 '회원 일련번호' 로 기존 게시물 '엔티티' 조회
-        BoardEntity boardEntity = boardRepository.findByUserSeq(boardDTO.getUser_seq());
+        BoardEntity boardEntity = boardRepository.findByUserSeq(board_give_id);
 
         boardEntity.setBoard_title(boardDTO.getBoard_title()); // 게시글 제목 업데이트
         boardEntity.setUser_seq(boardDTO.getUser_seq()); // 회원 일련번호 업데이트
@@ -187,39 +177,52 @@ public class BoardService {
 //-------------------------------------------------------------------------------------------------------
 
     // [#8. 좋아요한 게시글 전체 조회]
-    public List<BoardDTO> findMyLikePostingsByUserSeq(Long user_seq) {
+    public Page<BoardDTO> findMyLikePostingsByUserSeq(Long user_seq, Pageable pageable){
         Optional<UsersLikesEntity> usersLikesEntity = usersLikesRepository.findByUserSeq(user_seq); //회원의 좋아요 게시글 목록 조회
         if (!usersLikesEntity.isPresent()) {
-            throw new DataNotFoundException("해당 유저는 좋아요한 게시글이 하나도 없슶니다.");
+            throw new DataNotFoundException("해당 유저는 좋아요한 게시글이 하나도 없습니다.");
         }
+        //#1. 좋아요한 게시글이 적어도 1개 이상 있을 때
+        List<Long> likedBoardIds = usersLikesEntity.get().getBoardGiveId(); //해당 회원의 '게시글 번호' 목록을 불러온다.
 
-        List<Long> likedBoardIds = usersLikesEntity.get().getBoardGiveId(); //해당 회원의 게시글 목록을 불러온다.
-        List<BoardEntity> boardEntityList = new ArrayList<>();
+        //#2. boardEntityList 생성
+        //likedBoardIds 리스트에 있는 모든 ID에 해당하는 BoardEntity 객체들을 반환
+        List<BoardEntity> boardEntities = boardRepository.findAllById(likedBoardIds);
 
-        for (Long board_give_id : likedBoardIds) { // 게시글 목록에서, 게시글 번호를 하나씩 꺼낸다.
-            // boardRepository에서 모든 게시글번호를 가진 boardEntity를 boardEntityList에 담는다.
-            Optional<BoardEntity> boardEntity = boardRepository.findById(board_give_id);
-            if (boardEntity.isPresent()) { //해당 게시글의 정보가 존재하면
-                boardEntityList.add(boardEntity.get()); //리스트에 Entity 객체 1개씩 넣기
-            }
-        }
+        //#3. 페이징 처리를 위한 시작 인덱스(start)와 종료 인덱스(end)를 계산하는 로직
+        int start = (int) pageable.getOffset(); //현재 페이지에서 첫 번째 게시글의 '오프셋(시작 인덱스)'을 반환
+        /*오프셋은 데이터 목록에서 특정 항목이 '시작되는 위치'를 나타내며, 0부터 시작합니다.
+          ex)  6개의 게시글들을 한 페이지에 보여주는 경우 : 첫 번째 페이지의 오프셋은 0이고, 페이지 인덱스는 총 0,1,2,3,4,5 가 있다.
+                                                    두 번째 페이지의 오프셋은 6이고, 페이지 인덱스는 총 6,7,8,9,10,11 이 있다. */
 
-        List<BoardDTO> boardDTOList = boardEntityList.stream() //List<BoardDTO>로 변환하기 위해 Java Stream 을 사용하여 각 BoardEntity 객체를 BoardDTO.toBoardDTO 메서드를 사용하여 변환한 후
+        //현재 페이지에서 마지막 게시글의 인덱스를 계산
+        int end = Math.min((start + pageable.getPageSize()), boardEntities.size());
+        //(start + pageable.getPageSize())는 현재 페이지가 가득 찼을 때 마지막 게시글 다음 위치인덱스(즉, 다음 페이지의 첫번째 게시글 위치인덱스)를 나타낸다.
+        // 하지만 실제 게시글 수(boardEntities.size())가 이보다 작을 수 있으므로 Math.min() 함수를 사용하여 두 값 중 작은 값을 선택합니다.
+        // (start + pageable.getPageSize())가 반환하는 값은 실제로 마지막 항목 다음 위치를 가리키므로, 실제 마지막 항목의 인덱스보다 1이 큽니다.
+        // "현재 페이지 내 마지막 요소 위치"에 해당하는 값을 얻으려면 이 결과값에서 -1을 해야합니다. = end -1
+
+
+        //#4. 현재 페이지에 속하는 부분 리스트(subList(start, end))를 생성하고,
+        // 각 엔티티 객체들을 DTO로 변환하여 새로운 리스트로 수집합니다(collect(Collectors.toList())).
+        List<BoardDTO> boardDTOS = boardEntities.subList(start, end).stream()
                 .map(BoardDTO::toBoardDTO)
-                .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
-        return boardDTOList;
+                .collect(Collectors.toList());
+
+        //5. 생성된 DTO 리스트와 원래의 페이징 정보(pageable), 그리고 전체 엔티티 개수(boardEntities.size()) 등을 함께 제공하여 새로운 Page 객체 (PageImpl) 를 생성하고 반환합니다.
+        return new PageImpl<>(boardDTOS, pageable, boardEntities.size());
     }
 
 //-------------------------------------------------------------------------------------------------------
 
     // [#9. 키워드로 게시글 전체 조회]
     @Transactional
-    public List<BoardDTO> findAllByKeyword(String keyword) {
-        List<BoardEntity> boardEntityList = boardRepository.findByKeyword(keyword); // boardRepository 에서 findByKeyword 메서드를 호출하여 keyword가 포함된 모든 게시글 데이터를 boardEntityList 에 저장
+    public Page<BoardDTO> findAllByKeyword(String keyword, Pageable pageable) {
+        Page<BoardEntity> boardEntityList = boardRepository.findByKeyword(keyword, pageable);// boardRepository 에서 findByKeyword 메서드를 호출하여 keyword가 포함된 모든 게시글 데이터를 boardEntityList 에 저장
         List<BoardDTO> boardDTOList = boardEntityList.stream() //List<BoardDTO>로 변환하기 위해 Java Stream 을 사용하여 각 BoardEntity 객체를 BoardDTO.toBoardDTO 메서드를 사용하여 변환한 후
                 .map(BoardDTO::toBoardDTO)
                 .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
-        return boardDTOList;
+        return new PageImpl<>(boardDTOList, pageable, boardEntityList.getTotalElements());
     }
 }
 
