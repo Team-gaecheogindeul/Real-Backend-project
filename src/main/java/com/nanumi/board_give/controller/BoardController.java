@@ -22,7 +22,7 @@ public class BoardController {
     //[BoardService 객체 선언]
     private final BoardService boardService;
 
-    //[#1. (개인) 나눔 게시글 등록 - BoardService 클래스 호출] -----------------저장 성공-----------------
+    //[#1. (개인) 나눔 게시글 등록 ]
     @PostMapping(value = "/posting/sharing", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> give_posting_save(@RequestBody BoardDTO boardDTO) {
         boardService.give_posting_save(boardDTO);
@@ -34,7 +34,7 @@ public class BoardController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#2. (타인) 나눔 게시글 전체 조회] -----------------페이징 성공----------------- (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다.)
+    //[#2. 나눔 게시글 전체 조회]  (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다. 안할시 default 값은 page = 0 이다.)
 
     @GetMapping(value = "/posting/sharingAll", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> give_posting_findAll(@PageableDefault(size = 6, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -76,7 +76,7 @@ public class BoardController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#3. (타인,개인) 나눔 게시글 상세 조회] -----------------상세조회 성공-----------------
+    //[#3. (타인 & 개인) 나눔 게시글 상세 조회]
     @GetMapping(value = {"/posting/sharing", "/profile/sharing"}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> give_posting_findById(@RequestParam("board_give_id") Long board_give_id)  {
         Optional<BoardDTO> optionalBoardDTO = boardService.give_posting_findById(board_give_id);
@@ -92,9 +92,9 @@ public class BoardController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#4. (개인) 나눔 게시글 전체 조회] -----------------페이징 성공-----------------
+    //[#4. (개인) 나눔 게시글 전체 조회]
     @GetMapping(value = "/profile/sharingAll", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> findAllPostingsByUserSeq(@RequestParam("user_seq") Long user_seq,
+    public ResponseEntity<Map<String, Object>> findAllPostingsByUserSeq(@RequestParam("user_seq") String user_seq,
 // @PageableDefault(size=10, sort="id", direction=Sort.Direction.DESC)는 기본 페이지 크기를 10으로 하고, 정렬은 id 기준 내림차순으로 설정.
                                                                         @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC) Pageable pageable){
         Page<BoardDTO> boardDTOList = boardService.findAllPostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
@@ -114,10 +114,10 @@ public class BoardController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#6. (개인) 나눔 게시글 수정]  -----------------수정 성공----------------- (단, 클라언트는 요청시 JSON 형식 안에 게시글 번호도 같이 보내야한다.)
+    //[#6. (개인) 나눔 게시글 수정]  (단, 클라언트는 요청시 JSON 형식 안에 게시글 번호도 같이 보내야한다.)
     @PostMapping(value = "/profile/sharing/update", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> updatePartOfBoard(@RequestBody BoardDTO boardDTO) {
-        boardService.updatePartOfBoard(boardDTO.getBoard_give_id(),boardDTO);  // 사용자가 입력한 정보를 토대로 기존 게시물의 일부 데이터를 업데이트합니다.
+    public ResponseEntity<Object> updatePartOfBoard(@RequestBody BoardDTO boardDTO,@RequestParam("board_give_id") Long board_give_id) {
+        boardService.updatePartOfBoard(board_give_id,boardDTO);  // 사용자가 입력한 정보를 토대로 기존 게시물의 일부 데이터를 업데이트합니다.
         Map<String, Object> response = new HashMap<>();
         response.put("message", "수정 완료");
         return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
@@ -125,11 +125,11 @@ public class BoardController {
 //-----------------------------------------------------------------------------------------------------
 
 
-    //[#7. 좋아요/좋아요 취소 누르기]  -----------------좋아요/취소 성공-----------------
+    //[#7. 좋아요/좋아요 취소 누르기]
 
     @ResponseBody
     @PostMapping("/LikeOrNot") // '좋아요' & '좋아요 취소' 기능을 토글하기 위한 API
-    public ResponseEntity<Map<String, Object>> addLikeToPost(@RequestParam("user_seq") Long user_seq, @RequestParam("board_give_id") Long board_give_id) {
+    public ResponseEntity<Map<String, Object>> addLikeToPost(@RequestParam("user_seq") String user_seq, @RequestParam("board_give_id") Long board_give_id) {
 
         boardService.addLikeToPost(user_seq, board_give_id);
         Map<String, Object> response = new HashMap<>();
@@ -139,10 +139,10 @@ public class BoardController {
 
 //-----------------------------------------------------------------------------------------------------
 
-    //[#8. 좋아요한 게시글만 전체 불러오기] -----------------페이징 성공-----------------
+    //[#8. 좋아요한 게시글만 전체 불러오기]
     @GetMapping(value = "/MyLike", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String,Object>> findMyLikePostings(@RequestParam("user_seq") Long user_seq,
-                                                                 @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC)Pageable pageable){
+    public ResponseEntity<Map<String,Object>> findMyLikePostings(@RequestParam("user_seq") String user_seq,
+                                                                 @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC) Pageable pageable){
         Page<BoardDTO> boardDTOList = boardService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
         Map<String, Object> response = new HashMap<>();
         response.put("boardDTOList", boardDTOList.getContent()); //response 맵에 'boardDTOList' 라는 키와 함께 값을 저장
@@ -151,7 +151,7 @@ public class BoardController {
 
 //-------------------------------------------------------------------------------------------------------
 
-    // [#9. 키워드로 게시글 전체 조회] -----------------페이징 성공-----------------
+    // [#9. 키워드로 게시글 전체 조회]
     @GetMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> findAllByKeyword(@RequestParam("keyword") String keyword,
                                                                 @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC) Pageable pageable) {

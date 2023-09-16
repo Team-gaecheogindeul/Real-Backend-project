@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 // DB의 테이블 역할을 하는 클래스
@@ -23,8 +25,8 @@ public class BoardEntity {
     @Column
     private String board_title; // 게시글 제목
 
-    @Column
-    private Long user_seq; //회원 일련번호
+    @Column(length = 255)
+    private String user_seq; //회원 일련번호
 
     @Column
     private String category_id; //책 카테고리 아이디
@@ -71,8 +73,10 @@ public class BoardEntity {
     @Column
     private String date; // 게시글 작성 시간(날짜)
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String imageUrl; // 이미지 URL
+    // 게시글 1개에 포함된 이미지 목록
+    @ElementCollection(fetch = FetchType.EAGER) // 어노테이션이 사용된 것은 해당 필드가 EAGER 전략을 사용하여 즉시 로딩되도록 설정하기 위함입니다. 즉, 게시글 엔티티를 조회할 때 해당 게시글과 연관된 이미지 URL들도 함께 조회됩니다.
+    @Column(columnDefinition = "LONGTEXT")//해당 컬럼을 MySQL LONGTEXT 타입으로 설정하며, 이는 매우 큰 문자열(최대 4GB)을 저장할 수 있는 타입입니다.
+    private List<String> imageUrls = new ArrayList<>();
 
     @Column   // 해당 게시글의 좋아요 받은 '총 갯수'
     private Long likeCount;
@@ -99,10 +103,30 @@ public class BoardEntity {
         boardEntity.setUser_name(boardDTO.getUser_name());
         boardEntity.setDate(boardDTO.getDate());
         boardEntity.setLikeCount(boardDTO.getLikeCount());
-        boardEntity.setImageUrl(boardDTO.getImageUrl());
+        boardEntity.setImageUrls(new ArrayList<>(boardDTO.getImageUrls()));
         return boardEntity;
     }
+/* 객체 변환시, 이미지 변환에서 굳이 new ArrayList<> 쓰는 이유
 
+일반적으로 DTO와 Entity는 서로 다른 생명 주기와 책임을 가지므로, 이들 간에 데이터 동기화가 항상 필요한 것은 아닙니다.
+
+예를 들어, 사용자의 요청을 처리하는 중에 DTO의 데이터가 변경되었다고 해봅시다.
+이 경우 Entity까지 바로 영향을 받게 되면 예기치 않은 문제가 발생할 수 있습니다.
+그래서 일반적으로 DTO의 변경 사항이 Entity에 바로 반영되지 않도록 분리하는 것이 좋습니다.
+또한 JPA 같은 ORM 프레임워크를 사용할 때 Entity 인스턴스의 상태 변화는 트랜잭션 커밋 시점에 데이터베이스에 반영됩니다.
+따라서 실수로 Entity 상태를 변경하더라도 해당 트랜잭션을 롤백하면 원래 상태로 복구할 수 있습니다.
+하지만 만약 DTO와 Entity가 동일한 리스트 인스턴스를 공유한다면, 이런 방식으로 문제를 해결하기 어렵습니다.
+
+따라서 위에서 제안드린 것처럼 new ArrayList<>(boardDTO.getImageUrl())와 같은 방식으로
+새 리스트 인스턴스를 생성하여 사용하는 것이 안전합니다.
+
+
+
+
+
+
+
+ */
 }
 
 

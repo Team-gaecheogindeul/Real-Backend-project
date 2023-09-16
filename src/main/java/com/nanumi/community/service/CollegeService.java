@@ -2,6 +2,8 @@ package com.nanumi.community.service;
 
 import com.nanumi.community.dto.CommunityDTO;
 import com.nanumi.community.entity.CollegeEntity;
+import com.nanumi.community.entity.CommunityEntity;
+import com.nanumi.community.entity.FreeEntity;
 import com.nanumi.community.repository.CollegeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,6 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,61 +45,72 @@ public class CollegeService {
     }
 
     //-------------------------------------------------------------------------------------------------------
-//
-//    //[#3. (타인)나눔 게시글 상세 조회]
-//    @Transactional
-//    public Optional<BoardDTO> give_posting_findById(Long board_give_id) {
-//        Optional<BoardEntity> boardEntity = boardRepository.findById(board_give_id);
-//        return boardEntity.map(BoardDTO::toBoardDTO); //map() 메소드를 사용하여, Optional<BoardEntity> 내부의 BoardEntity 객체가 존재할 경우에만 BoardDTO.toBoardDTO() 메소드를 호출하여 Optional<BoardDTO> 객체로 변환하였습니다.
-//    }
-//
-//
-//    //-------------------------------------------------------------------------------------------------------
-//
-//    //[#4. (개인) 나눔 게시글 전체 조회] - BoardRepository 사용
-//    @Transactional
-//    public Page<BoardDTO> findAllPostingsByUserSeq(Long user_seq, Pageable pageable) {
-//        Page<BoardEntity> boardEntityPage = boardRepository.findAllByUserSeq(user_seq, pageable); // Pageable 객체 추가
-//        return boardEntityPage.map(BoardDTO::toBoardDTO); // 각 BoardEntity 객체를 BoardDTO로 변환한 후 페이지 형태로 반환
-//    }
-//
-//
-//
-//    //-------------------------------------------------------------------------------------------------------
-//
-//    //[#6. (개인) 나눔 게시글 수정]
-//    @Transactional
-//    public void updatePartOfBoard(Long board_give_id, BoardDTO boardDTO) { //수정된 게시글 데이터를 BoardDTO 객체로 받아온다.
-//        //요청된 게시물의 '회원 일련번호' 로 기존 게시물 '엔티티' 조회
-//        BoardEntity boardEntity = boardRepository.findByUserSeq(board_give_id);
-//
-//        boardEntity.setBoard_title(boardDTO.getBoard_title()); // 게시글 제목 업데이트
-//        boardEntity.setUser_seq(boardDTO.getUser_seq()); // 회원 일련번호 업데이트
-//        boardEntity.setCategory_id(boardDTO.getCategory_id()); // 책 카테고리 아이디 업데이트
-//        boardEntity.setBook_story(boardDTO.getBook_story()); // 책 내용 업데이트
-//        boardEntity.setState_underscore(boardDTO.getState_underscore()); // 상태_밑줄 흔적 업데이트
-//        boardEntity.setState_notes(boardDTO.getState_notes()); // 상태_필기 흔적 업데이트
-//        boardEntity.setState_cover(boardDTO.getState_cover()); // 상태_겉표지 상태 업데이트
-//        boardEntity.setState_written_name(boardDTO.getState_written_name()); // 상태_이름 기입 업데이트
-//        boardEntity.setState_page_color_change(boardDTO.getState_page_color_change()); // 상태_페이지 변색 업데이트
-//        boardEntity.setState_page_damage(boardDTO.getState_page_damage()); // 상태_페이지_손상 업데이트
-//        boardEntity.setCity_id(boardDTO.getCity_id()); // 지역 아이디 업데이트
-//        boardEntity.setMeet_want_location(boardDTO.getMeet_want_location()); // 거래 희망 지역 업데이트
-//
-//        // 변경된 게시물 엔티티 저장
-//        boardRepository.save(boardEntity);
-//    }
-//
-//
-//
-//    /*
-//    데이터베이스는 일반적으로 테이블 형태로 구성되며, 각 행(row)은 레코드(record)라고 부르는 저장 단위를 갖고 있습니다.
-//    엔티티 매니저가 데이터베이스 테이블에 새로운 레코드를 추가하는 경우, 새로운 row 가 추가되고 해당 row 에 대응하는 객체의 필드 값들이 저장됩니다.
-//    반면, 이미 존재하는 레코드의 특정 필드 값을 업데이트하는 경우, 해당 레코드의 해당 필드에 대한 값이 변경됩니다.
-//    따라서, 위 코드에서는 기존 게시물의 필드 값을 변경하는 것이며, 새로운 공간을 생성하는 것은 아닙니다.
-//
-//     */
-//
+
+    //[#3.  게시글 상세 조회]
+    @Transactional
+    public Optional<CommunityDTO> postingFindById(Long board_id) {
+        Optional<CollegeEntity> collegeEntity = collegeRepository.findById(board_id);
+        return collegeEntity.map(CommunityDTO::toCommunityDTO); //map() 메소드를 사용하여, Optional<BoardEntity> 내부의 BoardEntity 객체가 존재할 경우에만 BoardDTO.toBoardDTO() 메소드를 호출하여 Optional<BoardDTO> 객체로 변환하였습니다.
+    }
+
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#4. (개인) 게시글 전체 조회] - BoardRepository 사용
+    @Transactional
+    public Page<CommunityDTO> findAllPostingsByUserSeq(String user_seq, Pageable pageable) {
+        Page<CollegeEntity> collegeEntityPage = collegeRepository.findAllByUserSeq(user_seq, pageable); // Pageable 객체 추가
+        return collegeEntityPage.map(CommunityDTO::toCommunityDTO); // 각 BoardEntity 객체를 BoardDTO로 변환한 후 페이지 형태로 반환
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#6. (개인) 게시글 수정]
+    @Transactional
+    public void updatePartOfBoard(Long board_id, CommunityDTO communityDTO) {
+        //요청된 게시물의 '게시글 번호' 로 -----> 기존 게시물 '엔티티' 조회
+        Optional<CollegeEntity> optionalCollegeEntity = collegeRepository.findById(board_id);
+
+        if(optionalCollegeEntity.isPresent()) { // 게시글 엔티티가 존재시, 해당 데이터들을 모두 불러온다.
+            CollegeEntity collegeEntity = optionalCollegeEntity.get();
+
+            //#1. CommunityDTO 로부터 받은 값이 있는 경우 : 그 값(communityDTO.getBoard_title())을 freeEntity 에 설정
+            //만약, CommunityDTO 로부터 값을 못 받은 경우 : 기존 값(freeEntity.getBoard_title()))을 freeEntity 에 설정
+            collegeEntity.setBoard_title(Optional.ofNullable(communityDTO.getBoard_title()).orElse(collegeEntity.getBoard_title())); // 게시글 제목
+            collegeEntity.setUser_seq(Optional.ofNullable(communityDTO.getUser_seq()).orElse(collegeEntity.getUser_seq())); // 회원 일련번호
+            collegeEntity.setCategory_id(Optional.ofNullable(communityDTO.getCategory_id()).orElse(collegeEntity.getCategory_id())); //카테고리 아이디
+            collegeEntity.setBoard_story(Optional.ofNullable(communityDTO.getBoard_story()).orElse(collegeEntity.getBoard_story())); // 게시글 내용
+            collegeEntity.setUserGrade(Optional.ofNullable(communityDTO.getUserGrade()).orElse(collegeEntity.getUserGrade())); // 사용자 등급
+            collegeEntity.setNickName(Optional.ofNullable(communityDTO.getNickName()).orElse(collegeEntity.getNickName())); // 사용자 닉네임
+            collegeEntity.setDate(Optional.ofNullable(communityDTO.getDate()).orElse(collegeEntity.getDate())); // 게시글 작성 시간(날짜)
+            collegeEntity.setUserImageUrl(Optional.ofNullable(communityDTO.getUserImageUrl()).orElse(collegeEntity.getUserImageUrl())); //사용자 프로필 이미지
+            collegeEntity.setLikeCount(Optional.ofNullable(communityDTO.getLikeCount()).orElse(collegeEntity.getLikeCount())); // 좋아요 갯수
+            collegeEntity.setId(collegeEntity.getId()); // 게시글 번호 (그대로 유지)
+            // 추가 이미지들이 여러장 존재 시
+            if (communityDTO.getBoardImageUrls() != null) {
+                List<String> updatedImages = new ArrayList<>(collegeEntity.getBoardImages()); // 기존 이미지를 가지는 새로운 이미지 객체 생성
+                updatedImages.addAll(communityDTO.getBoardImageUrls());
+                collegeEntity.setBoardImages(updatedImages);
+            } // 추가 이미지들이 없을 때
+            collegeEntity.setBoardImages(collegeEntity.getBoardImages()); // 기존 이미지만 다시 세팅
+
+            //#2.  변경된 게시물 엔티티 저장
+            collegeRepository.save(collegeEntity);
+
+        } else { //해당 ID의 엔티티(기존 게시글)가 존재하지 않는다면 NoSuchElementException 을 발생시켜, 이 메소드를 호출한 곳에서 이 예외를 처리할 수 있도록 합니다.
+            throw new NoSuchElementException("No Board found with id: " + board_id);
+        }
+    }
+
+
+    /*
+    데이터베이스는 일반적으로 테이블 형태로 구성되며, 각 행(row)은 레코드(record)라고 부르는 저장 단위를 갖고 있습니다.
+    엔티티 매니저가 데이터베이스 테이블에 새로운 레코드를 추가하는 경우, 새로운 row 가 추가되고 해당 row 에 대응하는 객체의 필드 값들이 저장됩니다.
+    반면, 이미 존재하는 레코드의 특정 필드 값을 업데이트하는 경우, 해당 레코드의 해당 필드에 대한 값이 변경됩니다.
+    따라서, 위 코드에서는 기존 게시물의 필드 값을 변경하는 것이며, 새로운 공간을 생성하는 것은 아닙니다.
+
+     */
+
 ////-------------------------------------------------------------------------------------------------------
 //
 //    // [#7. 좋아요 누르기]

@@ -16,7 +16,7 @@ public class UsersLikesEntity { // 각 사용자의 좋아요 목록을 다루�
 
     @Id // pk 컬럼 지정. 필수
     @Column(name = "user_seq")
-    private Long userSeq;
+    private String userSeq;
 
     // 좋아요 누른 게시글 고유 번호 목록
     @ElementCollection(fetch = FetchType.EAGER) // 실제 값을 포함하는 엔티티를 조인 테이블로 설정
@@ -26,11 +26,13 @@ public class UsersLikesEntity { // 각 사용자의 좋아요 목록을 다루�
 
     // 좋아요한 게시글 고유 번호를 추가하는 메소드
     public void addLikedBoardId(Long boardGiveId) {
+
         this.boardGiveId.add(boardGiveId);
     }
 
     // 좋아요한 게시글 고유 번호를 삭제하는 메소드
     public void removeLikedBoardId(Long boardGiveId) {
+
         this.boardGiveId.remove(boardGiveId);
     }
 

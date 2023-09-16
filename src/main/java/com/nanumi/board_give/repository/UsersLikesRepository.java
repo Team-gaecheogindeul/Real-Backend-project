@@ -6,6 +6,6 @@ import java.util.Optional;
 
 public interface UsersLikesRepository extends JpaRepository<UsersLikesEntity, Long> {
 
-    Optional<UsersLikesEntity> findByUserSeq(Long userSeq);
+    Optional<UsersLikesEntity> findByUserSeq(String userSeq);
 
 }
