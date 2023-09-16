@@ -4,7 +4,9 @@ package com.nanumi.board_give.dto;
 import com.nanumi.board_give.entity.BoardEntity;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 // DTO(Data Transfer Object), VO, Bean, Entity
 @Getter
@@ -17,7 +19,7 @@ public class BoardDTO {
     //[나눔 게시글 인스턴스 변수 선언]
     private Long board_give_id; //나눔 게시글 아이디
     private String board_title; // 게시글 제목
-    private Long user_seq; //회원 일련번호
+    private String user_seq; //회원 일련번호
     private String category_id; //책 카테고리 아이디
     private String sub_category_id; //책 카테고리 아이디
     private String book_story; // 책 내용
@@ -33,7 +35,7 @@ public class BoardDTO {
     private String direct_index; // 직거래 가능
     private String user_name; // 사용자 이름
     private String date; // 게시글 작성 시간(날짜)
-    private String imageUrl; // 이미지 바이너리 데이터
+    private List<String> imageUrls; // 이미지 바이너리 데이터
     private Long likeCount; //좋아요 갯수
 
 
@@ -44,7 +46,7 @@ public class BoardDTO {
         // 각 속성에 대해 null 검사를 수행한 후 해당 속성을 설정하며, 값이 null인 경우 기본값을 설정합니다.
         boardDTO.setBoard_give_id(boardEntity.getId() != null ? boardEntity.getId() : 0L);
         boardDTO.setBoard_title(boardEntity.getBoard_title() != null ? boardEntity.getBoard_title() : "");
-        boardDTO.setUser_seq(boardEntity.getUser_seq() != null ? boardEntity.getUser_seq() : 0L);
+        boardDTO.setUser_seq(boardEntity.getUser_seq() != null ? boardEntity.getUser_seq() : "");
         boardDTO.setCategory_id(boardEntity.getCategory_id() != null ? boardEntity.getCategory_id() : "");
         boardDTO.setSub_category_id(boardEntity.getSub_category_id() != null ? boardEntity.getSub_category_id() : "");
         boardDTO.setBook_story(boardEntity.getBook_story() != null ? boardEntity.getBook_story() : "");
@@ -61,7 +63,7 @@ public class BoardDTO {
         boardDTO.setUser_name(boardEntity.getUser_name() != null ? boardEntity.getUser_name() : "");
         boardDTO.setDate(boardEntity.getDate() != null ? boardEntity.getDate() : "");
         boardDTO.setLikeCount(boardEntity.getLikeCount() != null ? boardEntity.getLikeCount() : 0L);
-        boardDTO.setImageUrl(boardEntity.getImageUrl() != null ? boardEntity.getImageUrl() : "");
+        boardDTO.setImageUrls(boardEntity.getImageUrls() != null ? new ArrayList<>(boardEntity.getImageUrls()) : new ArrayList<>());
         return boardDTO; //서비스 클래스로 반환
     }
 

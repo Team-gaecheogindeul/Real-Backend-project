@@ -15,12 +15,12 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long> {
 
     //[#4. (개인) 나눔 게시글 전체 조회]
     @Query("SELECT b FROM BoardEntity b WHERE b.user_seq = :user_seq")
-    Page<BoardEntity> findAllByUserSeq(@Param("user_seq") Long user_seq, Pageable pageable);
+    Page<BoardEntity> findAllByUserSeq(@Param("user_seq") String user_seq, Pageable pageable);
     //위 코드는 user_seq에 해당하는 모든 게시글(boardEntity)을 조회하되, 결과를 페이지 단위로 반환하도록 하는 JPQL 쿼리이다.
 
     //[#6. (개인) 나눔 게시글 수정]
     @Query("SELECT b FROM BoardEntity b WHERE b.user_seq = :user_seq")
-    BoardEntity findByUserSeq(@Param("user_seq") Long user_seq);
+    BoardEntity findByUserSeq(@Param("user_seq") String user_seq);
 
     // [#10. 검색기능 : 게시글 제목과 책 내용으로 검색하는 쿼리]
     @Query("SELECT b FROM BoardEntity b WHERE b.board_title LIKE %:keyword% OR b.book_story LIKE %:keyword%")

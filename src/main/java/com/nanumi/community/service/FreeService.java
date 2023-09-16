@@ -2,6 +2,7 @@ package com.nanumi.community.service;
 
 import com.nanumi.community.dto.CommunityDTO;
 import com.nanumi.community.entity.CollegeEntity;
+import com.nanumi.community.entity.CommunityEntity;
 import com.nanumi.community.entity.FreeEntity;
 import com.nanumi.community.repository.FreeRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,72 +32,90 @@ public class FreeService  {
 
 
 
-//------------------------------------------------------------------------------------------------------------------
-// [#2. 게시글 전체 조회]
-@Transactional
-public Page<CommunityDTO> postingFindAll(Pageable pageable) {
-    Page<FreeEntity> freeEntityList = freeRepository.findAll(pageable); //리포지토리에서 데이터들은 List 형태의 Entity 가 넘어오게 된다.
+    //------------------------------------------------------------------------------------------------------------------
+    // [#2. 게시글 전체 조회]
+    @Transactional
+    public Page<CommunityDTO> postingFindAll(Pageable pageable) {
+        Page<FreeEntity> freeEntityList = freeRepository.findAll(pageable); //리포지토리에서 데이터들은 List 형태의 Entity 가 넘어오게 된다.
 
-    // Entity -> Dto 로 옮겨 닮아서, controller 로 반환해줘야 한다.
-    return new PageImpl<>(freeEntityList.stream().map(CommunityDTO::toCommunityDTO).collect(Collectors.toList()), pageable, freeEntityList.getTotalElements());
-}
-//    //-------------------------------------------------------------------------------------------------------
-//
-//    //[#3. (타인)나눔 게시글 상세 조회]
-//    @Transactional
-//    public Optional<BoardDTO> give_posting_findById(Long board_give_id) {
-//        Optional<BoardEntity> boardEntity = boardRepository.findById(board_give_id);
-//        return boardEntity.map(BoardDTO::toBoardDTO); //map() 메소드를 사용하여, Optional<BoardEntity> 내부의 BoardEntity 객체가 존재할 경우에만 BoardDTO.toBoardDTO() 메소드를 호출하여 Optional<BoardDTO> 객체로 변환하였습니다.
-//    }
-//
-//
-//    //-------------------------------------------------------------------------------------------------------
-//
-//    //[#4. (개인) 나눔 게시글 전체 조회] - BoardRepository 사용
-//    @Transactional
-//    public Page<BoardDTO> findAllPostingsByUserSeq(Long user_seq, Pageable pageable) {
-//        Page<BoardEntity> boardEntityPage = boardRepository.findAllByUserSeq(user_seq, pageable); // Pageable 객체 추가
-//        return boardEntityPage.map(BoardDTO::toBoardDTO); // 각 BoardEntity 객체를 BoardDTO로 변환한 후 페이지 형태로 반환
-//    }
-//
-//
-//
-//    //-------------------------------------------------------------------------------------------------------
-//
-//    //[#6. (개인) 나눔 게시글 수정]
-//    @Transactional
-//    public void updatePartOfBoard(Long board_give_id, BoardDTO boardDTO) { //수정된 게시글 데이터를 BoardDTO 객체로 받아온다.
-//        //요청된 게시물의 '회원 일련번호' 로 기존 게시물 '엔티티' 조회
-//        BoardEntity boardEntity = boardRepository.findByUserSeq(board_give_id);
-//
-//        boardEntity.setBoard_title(boardDTO.getBoard_title()); // 게시글 제목 업데이트
-//        boardEntity.setUser_seq(boardDTO.getUser_seq()); // 회원 일련번호 업데이트
-//        boardEntity.setCategory_id(boardDTO.getCategory_id()); // 책 카테고리 아이디 업데이트
-//        boardEntity.setBook_story(boardDTO.getBook_story()); // 책 내용 업데이트
-//        boardEntity.setState_underscore(boardDTO.getState_underscore()); // 상태_밑줄 흔적 업데이트
-//        boardEntity.setState_notes(boardDTO.getState_notes()); // 상태_필기 흔적 업데이트
-//        boardEntity.setState_cover(boardDTO.getState_cover()); // 상태_겉표지 상태 업데이트
-//        boardEntity.setState_written_name(boardDTO.getState_written_name()); // 상태_이름 기입 업데이트
-//        boardEntity.setState_page_color_change(boardDTO.getState_page_color_change()); // 상태_페이지 변색 업데이트
-//        boardEntity.setState_page_damage(boardDTO.getState_page_damage()); // 상태_페이지_손상 업데이트
-//        boardEntity.setCity_id(boardDTO.getCity_id()); // 지역 아이디 업데이트
-//        boardEntity.setMeet_want_location(boardDTO.getMeet_want_location()); // 거래 희망 지역 업데이트
-//
-//        // 변경된 게시물 엔티티 저장
-//        boardRepository.save(boardEntity);
-//    }
-//
-//
-//
-//    /*
-//    데이터베이스는 일반적으로 테이블 형태로 구성되며, 각 행(row)은 레코드(record)라고 부르는 저장 단위를 갖고 있습니다.
-//    엔티티 매니저가 데이터베이스 테이블에 새로운 레코드를 추가하는 경우, 새로운 row 가 추가되고 해당 row 에 대응하는 객체의 필드 값들이 저장됩니다.
-//    반면, 이미 존재하는 레코드의 특정 필드 값을 업데이트하는 경우, 해당 레코드의 해당 필드에 대한 값이 변경됩니다.
-//    따라서, 위 코드에서는 기존 게시물의 필드 값을 변경하는 것이며, 새로운 공간을 생성하는 것은 아닙니다.
-//
-//     */
-//
-////-------------------------------------------------------------------------------------------------------
+        // Entity -> Dto 로 옮겨 닮아서, controller 로 반환해줘야 한다.
+        return new PageImpl<>(freeEntityList.stream().map(CommunityDTO::toCommunityDTO).collect(Collectors.toList()), pageable, freeEntityList.getTotalElements());
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#3. 게시글 상세 조회]
+@Transactional
+public Optional<CommunityDTO> postingFindById(Long board_id) {
+     Optional<FreeEntity> freeEntity = freeRepository.findById(board_id);
+     return freeEntity.map(CommunityDTO::toCommunityDTO); //map() 메소드를 사용하여, Optional<BoardEntity> 내부의 BoardEntity 객체가 존재할 경우에만 BoardDTO.toBoardDTO() 메소드를 호출하여 Optional<BoardDTO> 객체로 변환하였습니다.
+        //주어진 코드는 freeEntity 컬렉션 또는 스트림의 각 요소를 CommunityDTO 객체로 매핑하여 새로운 컬렉션 또는 스트림을 생성하는 것을 나타냅니다. 결과적으로 freeEntity의 각 요소가 CommunityDTO 객체로 변환된 새로운 컬렉션 또는 스트림이 반환될 것입니다.
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#4. (개인) 게시글 전체 조회] - BoardRepository 사용
+    @Transactional
+    public Page<CommunityDTO> findAllPostingsByUserSeq(String user_seq, Pageable pageable) {
+        Page<FreeEntity> freeEntityPage = freeRepository.findAllByUserSeq(user_seq, pageable); // Pageable 객체 추가
+        return freeEntityPage.map(CommunityDTO::toCommunityDTO); // 각 BoardEntity 객체를 BoardDTO로 변환한 후 페이지 형태로 반환
+    }
+
+
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#6. (개인) 게시글 수정]
+    @Transactional
+    public void updatePartOfBoard(Long board_id, CommunityDTO communityDTO) {
+        //요청된 게시물의 '게시글 번호' 로 -----> 기존 게시물 '엔티티' 조회
+        Optional<FreeEntity> optionalFreeEntity = freeRepository.findById(board_id);
+
+        if(optionalFreeEntity.isPresent()) { // 게시글 엔티티가 존재시, 해당 데이터들을 모두 불러온다.
+            FreeEntity freeEntity = optionalFreeEntity.get();
+
+            //#1. CommunityDTO 로부터 받은 값이 있는 경우 : 그 값(communityDTO.getBoard_title())을 freeEntity 에 설정
+                     //만약, CommunityDTO 로부터 값을 못 받은 경우 : 기존 값(freeEntity.getBoard_title()))을 freeEntity 에 설정
+            freeEntity.setBoard_title(Optional.ofNullable(communityDTO.getBoard_title()).orElse(freeEntity.getBoard_title())); // 게시글 제목
+            freeEntity.setUser_seq(Optional.ofNullable(communityDTO.getUser_seq()).orElse(freeEntity.getUser_seq())); // 회원 일련번호
+            freeEntity.setCategory_id(Optional.ofNullable(communityDTO.getCategory_id()).orElse(freeEntity.getCategory_id())); //카테고리 아이디
+            freeEntity.setBoard_story(Optional.ofNullable(communityDTO.getBoard_story()).orElse(freeEntity.getBoard_story())); // 게시글 내용
+            freeEntity.setUserGrade(Optional.ofNullable(communityDTO.getUserGrade()).orElse(freeEntity.getUserGrade())); // 사용자 등급
+            freeEntity.setNickName(Optional.ofNullable(communityDTO.getNickName()).orElse(freeEntity.getNickName())); // 사용자 닉네임
+            freeEntity.setDate(Optional.ofNullable(communityDTO.getDate()).orElse(freeEntity.getDate())); // 게시글 작성 시간(날짜)
+            freeEntity.setUserImageUrl(Optional.ofNullable(communityDTO.getUserImageUrl()).orElse(freeEntity.getUserImageUrl())); //사용자 프로필 이미지
+            freeEntity.setLikeCount(Optional.ofNullable(communityDTO.getLikeCount()).orElse(freeEntity.getLikeCount())); // 좋아요 갯수
+            freeEntity.setId(freeEntity.getId()); // 게시글 번호 (그대로 유지)
+            // 추가 이미지들이 여러장 존재 시
+            if (communityDTO.getBoardImageUrls() != null) {
+                List<String> updatedImages = new ArrayList<>(freeEntity.getBoardImages()); // 기존 이미지를 가지는 새로운 이미지 객체 생성
+                updatedImages.addAll(communityDTO.getBoardImageUrls());
+                freeEntity.setBoardImages(updatedImages);
+            } // 추가 이미지들이 없을 때
+            freeEntity.setBoardImages(freeEntity.getBoardImages()); // 기존 이미지만 다시 세팅
+
+            //#2.  변경된 게시물 엔티티 저장
+            freeRepository.save(freeEntity);
+
+        } else { //해당 ID의 엔티티(기존 게시글)가 존재하지 않는다면 NoSuchElementException 을 발생시켜, 이 메소드를 호출한 곳에서 이 예외를 처리할 수 있도록 합니다.
+            throw new NoSuchElementException("No Board found with id: " + board_id);
+        }
+    }
+
+
+
+
+
+
+
+    /*
+    데이터베이스는 일반적으로 테이블 형태로 구성되며, 각 행(row)은 레코드(record)라고 부르는 저장 단위를 갖고 있습니다.
+    엔티티 매니저가 데이터베이스 테이블에 새로운 레코드를 추가하는 경우, 새로운 row 가 추가되고 해당 row 에 대응하는 객체의 필드 값들이 저장됩니다.
+    반면, 이미 존재하는 레코드의 특정 필드 값을 업데이트하는 경우, 해당 레코드의 해당 필드에 대한 값이 변경됩니다.
+    따라서, 위 코드에서는 기존 게시물의 필드 값을 변경하는 것이며, 새로운 공간을 생성하는 것은 아닙니다.
+
+     */
+
+//-------------------------------------------------------------------------------------------------------
 //
 //    // [#7. 좋아요 누르기]
 //
