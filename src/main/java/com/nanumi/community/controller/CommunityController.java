@@ -63,7 +63,7 @@ public class CommunityController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#2. 게시글 전체 조회] (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다.)
+    //[#2. 게시글 (커뮤니티 별) 전체 조회] (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다.)
 
     @GetMapping(value = "/{type}posting/All", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> postingFindAll(@PathVariable String type, @PageableDefault(size = 6, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -140,7 +140,7 @@ public class CommunityController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#4. (개인) 게시글 전체 조회] -----------------페이징 성공-----------------
+    //[#4. (개인) 게시글 (커뮤니티 별) 전체 조회] -----------------페이징 성공-----------------
     @GetMapping(value = "/{type}profile/ALL", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> postingFindAll(@RequestParam("user_seq") String user_seq, @PathVariable String type,
                                                               @PageableDefault(size = 6, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -177,7 +177,7 @@ public class CommunityController {
 
 
 //------------------------------------------------------------------------------------------------------------------
-    /*   [#5. (개인) 나눔 게시글 상세 조회]
+    /*   [#5. (개인) 게시글 (커뮤니티 별) 상세 조회]
 
     => #3 과 동일한 메소드를 호출한다.
     두 개의 경로를 처리하고자 하는 경우, @GetMapping 애너테이션에서 경로를 '배열'로 설정하여 둘 이상의 경로를 지정할 수 있습니다.
@@ -185,7 +185,7 @@ public class CommunityController {
 
 //------------------------------------------------------------------------------------------------------------------
 
-    //[#6. 게시글 수정]  -----------------수정 성공----------------- (단, 클라언트는 요청시 JSON 형식 안에 게시글 번호도 같이 보내야한다.)
+    //[#6. 게시글 (커뮤니티 별)수정]  -----------------수정 성공----------------- (단, 클라언트는 요청시 JSON 형식 안에 게시글 번호도 같이 보내야한다.)
     @PostMapping(value = "/{type}profile/update", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> updatePartOfBoard(@RequestBody CommunityDTO communityDTO,@PathVariable String type,
                                                     @RequestParam("board_id") Long board_id) {
@@ -210,33 +210,66 @@ public class CommunityController {
         response.put("message", "수정 완료");
         return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
     }
-////-----------------------------------------------------------------------------------------------------
-//
-//
-//    //[#7. 좋아요/좋아요 취소 누르기]  -----------------좋아요/취소 성공-----------------
-//
-//    @ResponseBody
-//    @PostMapping("/LikeOrNot") // '좋아요' & '좋아요 취소' 기능을 토글하기 위한 API
-//    public ResponseEntity<Map<String, Object>> addLikeToPost(@RequestParam("user_seq") Long user_seq, @RequestParam("board_give_id") Long board_give_id) {
-//
-//        boardService.addLikeToPost(user_seq, board_give_id);
-//        Map<String, Object> response = new HashMap<>();
-//        return ResponseEntity.ok(response);
-//    }
-//
-//
-////-----------------------------------------------------------------------------------------------------
-//
-//    //[#8. 좋아요한 게시글만 전체 불러오기] -----------------페이징 성공-----------------
-//    @GetMapping(value = "/MyLike", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<Map<String,Object>> findMyLikePostings(@RequestParam("user_seq") Long user_seq,
-//                                                                 @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC)Pageable pageable){
-//        Page<BoardDTO> boardDTOList = boardService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("boardDTOList", boardDTOList.getContent()); //response 맵에 'boardDTOList' 라는 키와 함께 값을 저장
-//        return ResponseEntity.ok(response);
-//    }
-//
+//-----------------------------------------------------------------------------------------------------
+
+
+    //[#7. (커뮤니티별) 좋아요/좋아요 취소 누르기]  -----------------좋아요/취소 성공-----------------
+
+    @PostMapping("/{type}posting/All/LikeOrNot") // '좋아요' & '좋아요 취소' 기능을 토글하기 위한 API
+    public ResponseEntity<Map<String, Object>> addLikeToCommunityPost(@RequestParam("user_seq") String user_seq, @RequestParam("board_id") Long board_id, @PathVariable String type) {
+        switch (type) {
+            case "Free":
+                freeService.addLikeToPost(user_seq, board_id);
+                break;
+            case "Learn":
+                learnService.addLikeToPost(user_seq, board_id);
+                break;
+            case "School":
+                schoolService.addLikeToPost(user_seq, board_id);
+                break;
+            case "College":
+                collegeService.addLikeToPost(user_seq, board_id);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
+    }
+
+
+// -----------------------------------------------------------------------------------------------------
+
+    //[#8. 좋아요한 게시글만 (커뮤니티별) 전체 불러오기] -----------------페이징 성공-----------------
+    @GetMapping(value = "/{type}MyLike", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String,Object>> findMyLikePostings(@RequestParam("user_seq") String user_seq, @PathVariable String type,
+                                                                 @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC)Pageable pageable){
+        Page<CommunityDTO> communityDTOList;
+
+        switch (type) {
+            case "Free":
+                communityDTOList = freeService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
+                break;
+            case "Learn":
+                communityDTOList = learnService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
+                break;
+            case "School":
+                communityDTOList = schoolService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
+                break;
+            case "College":
+                communityDTOList = collegeService.findMyLikePostingsByUserSeq(user_seq,pageable); // boardService 에서 findAllPostingsByUserId 메서드를 호출해 모든 게시글 데이터를 가져온 후 이를 boardDTOList 에 저장
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("communityDTOList", communityDTOList.getContent()); //response 맵에 'boardDTOList' 라는 키와 함께 값을 저장
+        return ResponseEntity.ok(response);
+    }
+
 ////-------------------------------------------------------------------------------------------------------
 //
 //    // [#9. 키워드로 게시글 전체 조회] -----------------페이징 성공-----------------
