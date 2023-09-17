@@ -1,4 +1,4 @@
-package com.nanumi.board_give.entity;
+package com.nanumi.community.entity.UsersLikesEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,9 +10,8 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name = "user_likes_table") // 사용자 마다, 좋아요를 누른 게시글 번호 목록을 관리하는 테이블
-public class UsersLikesEntity { // 각 사용자의 좋아요 목록을 다루는 Entity
-
+@Table(name = "community_likes_table") // 사용자 마다, 좋아요를 누른 게시글 번호 목록을 관리하는 테이블
+public class CommunityLikesEntity {
 
     @Id // pk 컬럼 지정. 필수
     @Column(name = "user_seq")
@@ -20,31 +19,29 @@ public class UsersLikesEntity { // 각 사용자의 좋아요 목록을 다루�
 
     // 좋아요 누른 게시글 고유 번호 목록
     @ElementCollection(fetch = FetchType.EAGER) // 실제 값을 포함하는 엔티티를 조인 테이블로 설정
-    @Column(name = "board_give_id")
-    private List<Long> boardGiveId = new ArrayList<>();
+    @Column(name = "board_id")
+    private List<Long> boardId = new ArrayList<>();
 
 
     // 좋아요한 게시글 고유 번호를 추가하는 메소드
-    public void addLikedBoardId(Long boardGiveId) {
+    public void addLikedBoardId(Long boardId) {
 
-        this.boardGiveId.add(boardGiveId);
+        this.boardId.add(boardId);
     }
 
     // 좋아요한 게시글 고유 번호를 삭제하는 메소드
-    public void removeLikedBoardId(Long boardGiveId) {
+    public void removeLikedBoardId(Long boardId) {
 
-        this.boardGiveId.remove(boardGiveId);
+        this.boardId.remove(boardId);
     }
 
 
-
-
-    //특정 게시글 id를 board_give_id 리스트에서 조회하여 반환 하는 메소드
-    public boolean findByBoard_give_id(Long boardGiveId) {
+    //특정 게시글 id를 board_id 리스트에서 조회하여 반환 하는 메소드
+    public boolean findByBoard_id(Long boardId) {
         // for-each 문을 통해서 게시글을 찾는다.
-        for (Long board_give_id : this.boardGiveId) {
+        for (Long board_id : this.boardId) {
             //게시글이 존재한다면
-            if (board_give_id.equals(boardGiveId)) {
+            if (board_id.equals(boardId)) {
                 return true;
             }
         } return false;  // 게시글이 존재하지 않으면 0L 반환
