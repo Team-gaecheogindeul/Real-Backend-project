@@ -3,6 +3,7 @@ package com.nanumi.community.service;
 import com.nanumi.board_give.DataNotFoundException.DataNotFoundException;
 import com.nanumi.community.dto.CommunityDTO;
 import com.nanumi.community.entity.CollegeEntity;
+import com.nanumi.community.entity.FreeEntity;
 import com.nanumi.community.entity.UsersLikesEntity.CommunityLikesEntity;
 import com.nanumi.community.repository.CollegeRepository;
 import com.nanumi.community.repository.UsersLikesCommunityRepository;
@@ -178,14 +179,14 @@ public class CollegeService {
     }
 
 //-------------------------------------------------------------------------------------------------------
-//
-//    // [#9. 키워드로 게시글 전체 조회]
-//    @Transactional
-//    public Page<BoardDTO> findAllByKeyword(String keyword, Pageable pageable) {
-//        Page<BoardEntity> boardEntityList = boardRepository.findByKeyword(keyword, pageable);// boardRepository 에서 findByKeyword 메서드를 호출하여 keyword가 포함된 모든 게시글 데이터를 boardEntityList 에 저장
-//        List<BoardDTO> boardDTOList = boardEntityList.stream() //List<BoardDTO>로 변환하기 위해 Java Stream 을 사용하여 각 BoardEntity 객체를 BoardDTO.toBoardDTO 메서드를 사용하여 변환한 후
-//                .map(BoardDTO::toBoardDTO)
-//                .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
-//        return new PageImpl<>(boardDTOList, pageable, boardEntityList.getTotalElements());
-//    }
+
+    // [#9. 키워드로 게시글 전체 조회]
+    @Transactional
+    public Page<CommunityDTO> findAllByKeyword(String keyword, Pageable pageable) {
+        Page<CollegeEntity> collegeEntityList = collegeRepository.findByKeyword(keyword, pageable);// boardRepository 에서 findByKeyword 메서드를 호출하여 keyword가 포함된 모든 게시글 데이터를 boardEntityList 에 저장
+        List<CommunityDTO> communityDTOList = collegeEntityList.stream() //List<BoardDTO>로 변환하기 위해 Java Stream 을 사용하여 각 BoardEntity 객체를 BoardDTO.toBoardDTO 메서드를 사용하여 변환한 후
+                .map(CommunityDTO::toCommunityDTO)
+                .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
+        return new PageImpl<>(communityDTOList, pageable, collegeEntityList.getTotalElements());
+    }
 }

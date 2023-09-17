@@ -270,21 +270,81 @@ public class CommunityController {
         return ResponseEntity.ok(response);
     }
 
-////-------------------------------------------------------------------------------------------------------
-//
-//    // [#9. 키워드로 게시글 전체 조회] -----------------페이징 성공-----------------
-//    @GetMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<Map<String, Object>> findAllByKeyword(@RequestParam("keyword") String keyword,
-//                                                                @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC) Pageable pageable) {
-//        Page<BoardDTO> boardDTOSearchResult =  boardService.findAllByKeyword(keyword, pageable);
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("boardDTOSearchResult", boardDTOSearchResult.getContent());
-//        return ResponseEntity.ok(response);
-//    }
-//
-//
-//
-////-------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------
+
+    // [#9. 키워드로 (커뮤니티별) 게시글 전체 조회] -----------------페이징 성공-----------------
+    @GetMapping(value = "/{type}posting/All/search", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> findAllByKeyword(@RequestParam("keyword") String keyword, @PathVariable String type,
+                                                                @PageableDefault(size=6, sort="id", direction=Sort.Direction.DESC) Pageable pageable) {
+    Page<CommunityDTO> communityDTOSearchResult;
+
+    switch (type) {
+    case "Free":
+        communityDTOSearchResult = freeService.findAllByKeyword(keyword, pageable); //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
+        break;
+    case "Learn":
+        communityDTOSearchResult = learnService.findAllByKeyword(keyword, pageable);
+        break;
+    case "School":
+        communityDTOSearchResult = schoolService.findAllByKeyword(keyword, pageable);
+        break;
+    case "College":
+        communityDTOSearchResult = collegeService.findAllByKeyword(keyword, pageable);
+        break;
+    default:
+        throw new IllegalArgumentException("Invalid type: " + type);
+    }
+        if (communityDTOSearchResult == null) {
+        throw new RuntimeException("No data found for type: " + type); // 또는 다른 적절한 예외 처리
+    }//서비스 호출 후에도 값이 없다면 RuntimeException 을 발생시킨다. 이렇게 하면 컴파일 에러 없이 안전하게 코드를 실행할 수 있다.
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("CommunityDTOSearchResult", communityDTOSearchResult.getContent());
+    return ResponseEntity.ok(response);
+    }
+
+//-------------------------------------------------------------------------------------------------
+
+    //[#10. 인기게시글 (커뮤니티 별) 전체 조회] (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다.)
+
+    @GetMapping(value = "/{type}posting/All/Likes", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> postingFindAllByLikes(@PathVariable String type, @PageableDefault(size = 6, sort = "likeCount", direction = Sort.Direction.DESC) Pageable pageable) {
+/*
+    sort 속성값을 "likeCount"로 변경하였습니다. 이것은 결과를 'likeCount' 필드 값에 따라 정렬하도록 지시합니다. 또한 direction 속성값을 Sort.Direction.DESC로 설정하여 내림차순 정렬을 적용했습니다.
+    이러한 변경으로 인해 각 게시판 타입(Free, Learn, School, College)에 대해 좋아요 개수가 가장 많은 게시글부터 반환됩니다.
+
+ */
+        Page<CommunityDTO> communityDTOList; // switch 문 이전에 선언
+        /*
+         Page<CommunityDTO> communityDTOList 가 선언되었지만 초기화되지 않았기 때문에 컴파일 에러가 발생할 수 있다.
+         따라서 초기에 null 값으로 처리해주고, null 값에 대한 처리구문을 아래에 입력해주자.
+         */
+        switch (type) {
+            case "Free":
+                communityDTOList = freeService.postingFindAll(pageable);  //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
+                break;
+            case "Learn":
+                communityDTOList = learnService.postingFindAll(pageable);
+                break;
+            case "School":
+                communityDTOList = schoolService.postingFindAll(pageable);
+                break;
+            case "College":
+                communityDTOList = collegeService.postingFindAll(pageable);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+        if (communityDTOList == null) {
+            throw new RuntimeException("No data found for type: " + type); // 또는 다른 적절한 예외 처리
+        }//서비스 호출 후에도 값이 없다면 RuntimeException 을 발생시킨다. 이렇게 하면 컴파일 에러 없이 안전하게 코드를 실행할 수 있다.
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("CommunityDTOList", communityDTOList.getContent()); //이 코드는 맵 객체에 가져온 데이터(boardDTOList)를 저장한다. 이 때 데이터와 관련된 키("boardList")도 함께 저장.
+        //클라이언트에게 페이지 관련 정보 없이 실제 데이터만 전달하려면, Page.getContent() 메소드를 사용하여 content 내용만 추출하면 된다.
+        return ResponseEntity.ok(response); //이 코드는 맵 객체를 반환합니다. 이 때 ResponseEntity.ok() 를 사용하여 HTTP 응답 코드 200(성공)과 함께 맵 객체를 반환한다.
+    }                                       // 클라이언트는 이 데이터를 JSON 형식으로 받아 사용할 수 있다.
+
 
 }
 

@@ -1,7 +1,6 @@
 package com.nanumi.community.repository;
 
 import com.nanumi.community.entity.CollegeEntity;
-import com.nanumi.community.entity.FreeEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +16,8 @@ public interface CollegeRepository extends JpaRepository<CollegeEntity,Long> {
     //[#6. 게시글 수정]
     @Query("SELECT b FROM CollegeEntity b WHERE b.user_seq = :user_seq")
     CollegeEntity findByUserSeq(@Param("user_seq") String user_seq);
+
+    // [#9. 검색기능 ]
+    @Query("SELECT b FROM CollegeEntity b WHERE b.board_title LIKE %:keyword% OR b.board_story LIKE %:keyword%")
+    Page<CollegeEntity> findByKeyword(String keyword, Pageable pageable);
 }

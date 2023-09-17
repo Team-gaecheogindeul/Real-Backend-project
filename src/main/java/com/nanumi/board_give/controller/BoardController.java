@@ -165,6 +165,17 @@ public class BoardController {
 
 //-------------------------------------------------------------------------------------------------------
 
+
+    //[#10. 인기 게시글 전체 조회]  (클라이언트는 요청시 page 값을 같이 param 으로 전달해야한다. 안할시 default 값은 page = 0 이다.)
+
+    @GetMapping(value = "/posting/sharingAll/Likes", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> give_posting_findAllBYLikes(@PageableDefault(size = 6, sort = "likeCount", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<BoardDTO> boardDTOList = boardService.give_posting_findAll(pageable);  //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
+        Map<String, Object> response = new HashMap<>();
+        response.put("boardTotalList", boardDTOList.getContent()); //이 코드는 맵 객체에 가져온 데이터(boardDTOList)를 저장합니다. 이 때 데이터와 관련된 키("boardList")도 함께 저장합니다.
+        //클라이언트에게 페이지 관련 정보 없이 실제 데이터만 전달하려면, Page.getContent() 메소드를 사용하여 content 내용만 추출하면 됩니다.
+        return ResponseEntity.ok(response); //이 코드는 맵 객체를 반환합니다. 이 때 ResponseEntity.ok() 를 사용하여 HTTP 응답 코드 200(성공)과 함께 맵 객체를 반환합니다.
+    }
 }
 
 
