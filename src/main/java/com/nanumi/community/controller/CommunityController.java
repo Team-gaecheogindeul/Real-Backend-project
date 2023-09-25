@@ -1,6 +1,9 @@
 package com.nanumi.community.controller;
 
+
+import com.nanumi.community.dto.CommentDTO;
 import com.nanumi.community.dto.CommunityDTO;
+import com.nanumi.community.entity.CommentEntity.CommentEntity;
 import com.nanumi.community.service.CollegeService;
 import com.nanumi.community.service.FreeService;
 import com.nanumi.community.service.LearnService;
@@ -346,6 +349,124 @@ public class CommunityController {
     }                                       // 클라이언트는 이 데이터를 JSON 형식으로 받아 사용할 수 있다.
 
 
+    //-------------------------------------------------------------------------------------------------
+    //[#11. 댓글 입력] - 해당 게시글 번호를 ( board_id ) 프론트 에서 입력해주어야한다.
+    @PostMapping(value = "/{type}Posting/Comment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> CommentSave(@PathVariable String type, @RequestBody CommentDTO commentDTO) {
+        switch (type) {
+            case "Free":
+                freeService.CommentSave(commentDTO);
+                break;
+            case "Learn":
+                learnService.CommentSave(commentDTO);
+                break;
+            case "School":
+                schoolService.CommentSave(commentDTO);
+                break;
+            case "College":
+                collegeService.CommentSave(commentDTO);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "댓글 저장 완료");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    //[#12. 대댓글 입력] - 클라이언트에서 대댓글을 작성할 때, 해당 대댓글이 어느 댓글에 속하는지를 알 수 있도록 부모 댓글의 ID(CommentId)를 함께 전달해야 한다.
+    @PostMapping(value = "/{type}Posting/ChildComment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> ChildCommentSave(@PathVariable String type, @RequestParam("comment_id") Long comment_id, @RequestBody CommentDTO commentDTO) {
+
+        switch (type) {
+            case "Free":
+                freeService.ChildCommentSave(comment_id, commentDTO);
+                break;
+            case "Learn":
+                learnService.ChildCommentSave(comment_id, commentDTO);
+                break;
+            case "School":
+                schoolService.ChildCommentSave(comment_id, commentDTO);
+                break;
+            case "College":
+                collegeService.ChildCommentSave(comment_id, commentDTO);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "대댓글 저장 완료");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    //[#13. 댓글 조회 & 게시글 상세조회(개인, 타인)와 같이 호출 되어야 한다.]
+//    @GetMapping(value = {"/{type}posting/Comment", "/{type}profile/Comment"}, produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<Map<String, Object>> commentFindById(@PathVariable String type, @RequestParam("board_id") Long board_id) {
+//
+//        Optional<CommentDTO> optionalCommentDTO; // 초기화하지 않음
+//
+//    /*
+//     Page<CommunityDTO> communityDTOList 가 선언되었지만 초기화되지 않았기 때문에 컴파일 에러가 발생할 수 있다.
+//     따라서 초기에 null 값으로 처리해주고, null 값에 대한 처리구문을 아래에 입력해주자.
+//     */
+//
+//        switch (type) {
+//            case "Free":
+//                optionalCommentDTO = freeService.commentFindById(board_id);  //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
+//                break;
+//            case "Learn":
+//                optionalCommentDTO = learnService.commentFindById(board_id);
+//                break;
+//            case "School":
+//                optionalCommentDTO = schoolService.commentFindById(board_id);
+//                break;
+//            case "College":
+//                optionalCommentDTO = collegeService.commentFindById(board_id);
+//                break;
+//            default:
+//                throw new IllegalArgumentException("Invalid type: " + type);
+//        }
+//
+//        if (optionalCommentDTO.isPresent()) {
+//            CommentDTO commentDTO = optionalCommentDTO.get();
+//            Map<String, Object> responseComment = new HashMap<>();
+//            responseComment.put("CommentDTO", commentDTO); //response 에 Key 값 으로 commentDTO 를 저장하고, boardDTO 객체를 value 값으로 주입
+//            return ResponseEntity.ok(responseComment); //200응답 코드와 같이 출력
+//        } else { //Optional<BoardDTO> 객체 내부에 BoardDTO 객체가 존재하지 않는 경우
+//            return ResponseEntity.notFound().build(); //404 응답 코드 반환
+//        }
+//    }
+
+
+    //-------------------------------------------------------------------------------------------------
+    //[#13. 댓글 수정(커뮤니티별) & 게시글 수정과 같이 호출 되어야 한다.]
+
+//    @PostMapping(value = "/{type}profile/update/Comment", produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<Object> updatePartOfComment(@RequestBody CommentDTO commentDTO,@PathVariable String type,
+//                                                    @RequestParam("board_id") Long board_id, @RequestParam("user_seq") String user_seq) {
+//
+//        switch (type) {
+//            case "Free": // 사용자가 입력한 정보를 토대로 기존 게시물의 일부 데이터를 업데이트합니다.
+//                freeService.updatePartOfComment(board_id, user_seq, commentDTO);
+//                break;
+//            case "Learn":
+//                learnService.updatePartOfComment(board_id, commentDTO);
+//                break;
+//            case "School":
+//                schoolService.updatePartOfComment(board_id, commentDTO);
+//                break;
+//            case "College":
+//                collegeService.updatePartOfComment(board_id, commentDTO);
+//                break;
+//            default:
+//                throw new IllegalArgumentException("Invalid type: " + type);
+//        }
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("message", "댓글 수정 완료");
+//        return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
+//    }
 }
 
 

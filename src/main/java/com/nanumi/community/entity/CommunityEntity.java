@@ -55,6 +55,7 @@ public class CommunityEntity {
     protected List<String> boardImages = new ArrayList<>();
 
 
+
     //[DTO 객체 -> Entity 객체 변환]
     public static CommunityEntity toSaveEntity(CommunityDTO communityDTO) {
         CommunityEntity communityEntity = new CommunityEntity();

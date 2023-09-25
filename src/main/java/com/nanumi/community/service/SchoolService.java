@@ -1,10 +1,12 @@
 package com.nanumi.community.service;
 
 import com.nanumi.board_give.DataNotFoundException.DataNotFoundException;
+import com.nanumi.community.dto.CommentDTO;
 import com.nanumi.community.dto.CommunityDTO;
-import com.nanumi.community.entity.FreeEntity;
+import com.nanumi.community.entity.CommentEntity.CommentEntity;
 import com.nanumi.community.entity.SchoolEntity;
 import com.nanumi.community.entity.UsersLikesEntity.CommunityLikesEntity;
+import com.nanumi.community.repository.CommentRepository;
 import com.nanumi.community.repository.SchoolRepository;
 import com.nanumi.community.repository.UsersLikesCommunityRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class SchoolService {
     private final SchoolRepository schoolRepository;
     private final UsersLikesCommunityRepository usersLikesCommunityRepository;
+    private final CommentRepository commentRepository;
 
     //[#1. 고등학교입시 게시글 등록 ]
     public void PostingSave(CommunityDTO communityDTO) {
@@ -184,4 +187,51 @@ public class SchoolService {
                 .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
         return new PageImpl<>(communityDTOList, pageable, schoolEntityList.getTotalElements());
     }
+
+
+//-------------------------------------------------------------------------------------------------------
+
+    // [#11. 댓글 입력]
+    public void CommentSave(CommentDTO commentDTO) {
+
+        CommentEntity commentEntity = CommentEntity.toSaveEntity(commentDTO); //DTO -> Entity 변환
+        commentRepository.save(commentEntity);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+    // [#12. 대댓글 입력]
+    @Transactional
+    /*
+     위와 같은 코드는 한 번의 트랜잭션에서 처리되어야 합니다.
+     그래야만 Hibernate 가 변경된 객체 상태를 데이터베이스와 동기화할 수 있기 때문입니다.
+     따라서 위 메서드 전체를 Spring의 @Transactional 어노테이션으로 감싸주는 것을 권장합니다.
+     */
+    public void ChildCommentSave(Long comment_id, CommentDTO commentDTO) {
+
+        // parentCommentId 값 설정
+        if (comment_id != null) { // 부모댓글의 commentId 가 존재한다면,
+            CommentEntity parentCommentEntity = commentRepository.findById(comment_id) //해당 commentId 값을 가진 부모 댓글 엔티티를 가져온다.
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid parent comment id: " + comment_id));
+
+            CommentEntity childCommentEntity = CommentEntity.toSaveEntity(commentDTO); // 대댓글 Entity 생성.
+
+            //해당 대댓글은 부모 댓글의 자식 리스트에 추가 (일대다 관계 설정)
+            parentCommentEntity.getChildComments().add(childCommentEntity);
+            //부모 댓글의 comment_id를 대댓글 CommentDTO 의 parentCommentId 필드에 설정합니다.
+            childCommentEntity.setParent(parentCommentEntity);
+            // DB 저장
+            commentRepository.save(childCommentEntity);
+        }
+
+    }
+
+//-------------------------------------------------------------------------------------------------------
+
+    //[#13. 댓글 상세 조회]
+//    @Transactional
+//    public Optional<CommentDTO> commentFindById(Long board_id) {
+//        Optional<CommentEntity> commentEntity = commentRepository.findById(board_id);
+//        return commentEntity.map(CommentDTO::toCommentDTO); //map() 메소드를 사용하여, Optional<CommentEntity> 내부의 commentEntity 객체가 존재할 경우에만 CommentDTO.tocommentDTO() 메소드를 호출하여 Optional<CommentDTO> 객체로 변환하였습니다.
+//
+//    }
 }

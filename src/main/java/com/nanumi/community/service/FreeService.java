@@ -1,9 +1,12 @@
 package com.nanumi.community.service;
 
 import com.nanumi.board_give.DataNotFoundException.DataNotFoundException;
+import com.nanumi.community.dto.CommentDTO;
 import com.nanumi.community.dto.CommunityDTO;
+import com.nanumi.community.entity.CommentEntity.CommentEntity;
 import com.nanumi.community.entity.FreeEntity;
 import com.nanumi.community.entity.UsersLikesEntity.CommunityLikesEntity;
+import com.nanumi.community.repository.CommentRepository;
 import com.nanumi.community.repository.FreeRepository;
 import com.nanumi.community.repository.UsersLikesCommunityRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class FreeService  {
     private final FreeRepository freeRepository;
     private final UsersLikesCommunityRepository usersLikesCommunityRepository;
+    private final CommentRepository commentRepository;
 
     //[#1. 자유 게시글 등록 ]
     public void PostingSave(CommunityDTO communityDTO) {
@@ -235,4 +239,109 @@ public Optional<CommunityDTO> postingFindById(Long board_id) {
                 .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
         return new PageImpl<>(communityDTOList, pageable, freeEntityList.getTotalElements());
     }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    // [#11. 댓글 입력]
+    public void CommentSave(CommentDTO commentDTO) {
+
+        CommentEntity commentEntity = CommentEntity.toSaveEntity(commentDTO); //DTO -> Entity 변환
+        commentRepository.save(commentEntity);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    // [#12. 대댓글 입력]
+    @Transactional
+    /*
+     위와 같은 코드는 한 번의 트랜잭션에서 처리되어야 합니다.
+     그래야만 Hibernate 가 변경된 객체 상태를 데이터베이스와 동기화할 수 있기 때문입니다.
+     따라서 위 메서드 전체를 Spring의 @Transactional 어노테이션으로 감싸주는 것을 권장합니다.
+     */
+    /*
+     대댓글 저장 로직에서는 부모 댓글 엔티티를 데이터베이스에서 직접 조회하고,
+     이것을 새로 생성된 대댓글 엔티티의 부모로 설정합니다. 그 후에 변경된 내용을 데이터베이스에 저장합니다.
+
+     */
+    public void ChildCommentSave(Long comment_id, CommentDTO commentDTO) {
+
+        // parentCommentId 값 설정
+        if (comment_id != null) { // 부모댓글의 commentId 가 존재한다면,
+            CommentEntity parentCommentEntity = commentRepository.findById(comment_id) //해당 commentId 값을 가진 부모 댓글 엔티티를 가져온다.
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid parent comment id: " + comment_id));
+
+            CommentEntity childCommentEntity = CommentEntity.toSaveEntity(commentDTO); // 새로운 대댓글 Entity 생성
+
+            //코드는 자식 댓글이 부모 댓글을 참조하도록 설정합니다. 이로 인해 parent_comment_id 필드가 올바르게 설정됩니다.
+            childCommentEntity.setParent(parentCommentEntity);
+
+            /*
+            먼저 자식 댓글을 저장하여 영속성 컨텍스트에 포함시켜 준 후,
+            그 결과로 반환된 엔티티 (savedChild)를 부모 댓글의 자식 목록에 추가합니다.
+             */
+            CommentEntity savedChild = commentRepository.save(childCommentEntity);
+
+            //해당 대댓글은 부모 댓글의 자식 리스트에 추가 (일대다 관계 설정)
+            parentCommentEntity.getChildComments().add(savedChild);
+            commentRepository.save(parentCommentEntity);
+        }
+/*
+JPA에서 엔티티의 생명주기는 다음과 같습니다:
+
+Transient: JPA가 아직 알지 못하는 상태
+Persistent: JPA가 관리하는 상태 (영속 상태)
+Detached: JPA가 더 이상 관리하지 않는 상태
+
+->
+ */
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#13. 댓글 상세 조회]
+//    @Transactional
+//    public Optional<CommentDTO> commentFindById(Long board_id) {
+//        Optional<CommentEntity> commentEntity = commentRepository.findById(board_id);
+//        return commentEntity.map(CommentDTO::toCommentDTO); //map() 메소드를 사용하여, Optional<CommentEntity> 내부의 commentEntity 객체가 존재할 경우에만 CommentDTO.tocommentDTO() 메소드를 호출하여 Optional<CommentDTO> 객체로 변환하였습니다.
+//
+//    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#14. 댓글 수정]
+//    @Transactional
+//    public void updatePartOfComment(Long board_id, String user_seq, CommunityDTO communityDTO) {
+//        //요청된 게시물의 '게시글 번호' 로 -----> 기존 게시물 '댓글 엔티티' 조회
+//        Optional<CommentEntity> optionalCommentEntity = commentRepository.findById(board_id);
+//
+//        if(optionalFreeEntity.isPresent()) { // 게시글 엔티티가 존재시, 해당 데이터들을 모두 불러온다.
+//            FreeEntity freeEntity = optionalFreeEntity.get();
+//
+//            //#1. CommunityDTO 로부터 받은 값이 있는 경우 : 그 값(communityDTO.getBoard_title())을 freeEntity 에 설정
+//            //만약, CommunityDTO 로부터 값을 못 받은 경우 : 기존 값(freeEntity.getBoard_title()))을 freeEntity 에 설정
+//            freeEntity.setBoard_title(Optional.ofNullable(communityDTO.getBoard_title()).orElse(freeEntity.getBoard_title())); // 게시글 제목
+//            freeEntity.setUser_seq(Optional.ofNullable(communityDTO.getUser_seq()).orElse(freeEntity.getUser_seq())); // 회원 일련번호
+//            freeEntity.setCategory_id(Optional.ofNullable(communityDTO.getCategory_id()).orElse(freeEntity.getCategory_id())); //카테고리 아이디
+//            freeEntity.setBoard_story(Optional.ofNullable(communityDTO.getBoard_story()).orElse(freeEntity.getBoard_story())); // 게시글 내용
+//            freeEntity.setUserGrade(Optional.ofNullable(communityDTO.getUserGrade()).orElse(freeEntity.getUserGrade())); // 사용자 등급
+//            freeEntity.setNickName(Optional.ofNullable(communityDTO.getNickName()).orElse(freeEntity.getNickName())); // 사용자 닉네임
+//            freeEntity.setDate(Optional.ofNullable(communityDTO.getDate()).orElse(freeEntity.getDate())); // 게시글 작성 시간(날짜)
+//            freeEntity.setUserImageUrl(Optional.ofNullable(communityDTO.getUserImageUrl()).orElse(freeEntity.getUserImageUrl())); //사용자 프로필 이미지
+//            freeEntity.setLikeCount(Optional.ofNullable(communityDTO.getLikeCount()).orElse(freeEntity.getLikeCount())); // 좋아요 갯수
+//            freeEntity.setId(freeEntity.getId()); // 게시글 번호 (그대로 유지)
+//            // 추가 이미지들이 여러장 존재 시
+//            if (communityDTO.getBoardImageUrls() != null) {
+//                List<String> updatedImages = new ArrayList<>(freeEntity.getBoardImages()); // 기존 이미지를 가지는 새로운 이미지 객체 생성
+//                updatedImages.addAll(communityDTO.getBoardImageUrls());
+//                freeEntity.setBoardImages(updatedImages);
+//            } // 추가 이미지들이 없을 때
+//            freeEntity.setBoardImages(freeEntity.getBoardImages()); // 기존 이미지만 다시 세팅
+//
+//            //#2.  변경된 게시물 엔티티 저장
+//            freeRepository.save(freeEntity);
+//
+//        } else { //해당 ID의 엔티티(기존 게시글)가 존재하지 않는다면 NoSuchElementException 을 발생시켜, 이 메소드를 호출한 곳에서 이 예외를 처리할 수 있도록 합니다.
+//            throw new NoSuchElementException("No Board found with id: " + board_id);
+//        }
+//    }
 }
