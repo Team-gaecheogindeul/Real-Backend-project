@@ -68,7 +68,7 @@ public class CommentEntity {
 */
     // 자기 참조 관계 설정: 한 댓글은 여러 개의 자식 댓글을 가질 수 있으며, 한 자식 댓글은 하나의 부모 댓글을 가집니다.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_comment_id")
+    @JoinColumn(name = "parentCommentId")
     private CommentEntity parentCommentEntity;
 
 
@@ -84,7 +84,7 @@ public class CommentEntity {
     public static CommentEntity toSaveEntity(CommentDTO commentDTO) {
         CommentEntity commentEntity = new CommentEntity(); // 부모객체 선언
 
-        commentEntity.setBoardId(commentDTO.getBoard_id() != null ? commentDTO.getBoard_id() : 0L);
+        commentEntity.setBoardId(commentDTO.getBoard_id() != null ? commentDTO.getBoard_id() : null);
         commentEntity.setUserSeq(commentDTO.getUser_seq() != null ? commentDTO.getUser_seq() : "");
         commentEntity.setId(commentDTO.getComment_id() != null ? commentDTO.getComment_id() : 0L);
         commentEntity.setContent(commentDTO.getContent() != null ? commentDTO.getContent() : "");
