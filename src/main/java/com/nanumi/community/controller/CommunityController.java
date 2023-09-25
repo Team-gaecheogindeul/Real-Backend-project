@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -376,6 +377,7 @@ public class CommunityController {
 
     //-------------------------------------------------------------------------------------------------
     //[#12. 대댓글 입력] - 클라이언트에서 대댓글을 작성할 때, 해당 대댓글이 어느 댓글에 속하는지를 알 수 있도록 부모 댓글의 ID(CommentId)를 함께 전달해야 한다.
+    // 단, board_id는 절대 서버로 넘겨주지 않는다. 그냥 null 값으로 두자.
     @PostMapping(value = "/{type}Posting/ChildComment", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> ChildCommentSave(@PathVariable String type, @RequestParam("comment_id") Long comment_id, @RequestBody CommentDTO commentDTO) {
 
@@ -401,43 +403,35 @@ public class CommunityController {
     }
 
     //-------------------------------------------------------------------------------------------------
-    //[#13. 댓글 조회 & 게시글 상세조회(개인, 타인)와 같이 호출 되어야 한다.]
-//    @GetMapping(value = {"/{type}posting/Comment", "/{type}profile/Comment"}, produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<Map<String, Object>> commentFindById(@PathVariable String type, @RequestParam("board_id") Long board_id) {
-//
-//        Optional<CommentDTO> optionalCommentDTO; // 초기화하지 않음
-//
-//    /*
-//     Page<CommunityDTO> communityDTOList 가 선언되었지만 초기화되지 않았기 때문에 컴파일 에러가 발생할 수 있다.
-//     따라서 초기에 null 값으로 처리해주고, null 값에 대한 처리구문을 아래에 입력해주자.
-//     */
-//
-//        switch (type) {
-//            case "Free":
-//                optionalCommentDTO = freeService.commentFindById(board_id);  //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
-//                break;
-//            case "Learn":
-//                optionalCommentDTO = learnService.commentFindById(board_id);
-//                break;
-//            case "School":
-//                optionalCommentDTO = schoolService.commentFindById(board_id);
-//                break;
-//            case "College":
-//                optionalCommentDTO = collegeService.commentFindById(board_id);
-//                break;
-//            default:
-//                throw new IllegalArgumentException("Invalid type: " + type);
-//        }
-//
-//        if (optionalCommentDTO.isPresent()) {
-//            CommentDTO commentDTO = optionalCommentDTO.get();
-//            Map<String, Object> responseComment = new HashMap<>();
-//            responseComment.put("CommentDTO", commentDTO); //response 에 Key 값 으로 commentDTO 를 저장하고, boardDTO 객체를 value 값으로 주입
-//            return ResponseEntity.ok(responseComment); //200응답 코드와 같이 출력
-//        } else { //Optional<BoardDTO> 객체 내부에 BoardDTO 객체가 존재하지 않는 경우
-//            return ResponseEntity.notFound().build(); //404 응답 코드 반환
-//        }
-//    }
+    //[#13. 댓글 조회 ] ---> 게시글 상세조회(개인, 타인)와 같이 호출 되어야 한다.
+    @GetMapping(value ={ "/{type}Posting/Comment", "/{type}profile/Comment"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> getCommentsAndChildComments(@PathVariable String type, @RequestParam Long board_id) {
+        List<CommentDTO> commentDTOList;
+        switch (type) {
+            case "Free":
+                commentDTOList = freeService.getCommentsAndChildComments(board_id);
+                break;
+            case "Learn":
+                commentDTOList = learnService.getCommentsAndChildComments(board_id);
+                break;
+            case "School":
+                commentDTOList = schoolService.getCommentsAndChildComments(board_id);
+                break;
+            case "College":
+                commentDTOList = collegeService.getCommentsAndChildComments(board_id);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+        if (commentDTOList != null) {
+            Map<String, Object> responseComment = new HashMap<>();
+            responseComment.put("commentDTOList", commentDTOList); //response 에 Key 값 으로 commentDTOList 를 저장하고, commentDTOList 객체를 value 값으로 주입
+            return ResponseEntity.ok(responseComment); //200응답 코드와 같이 출력
+        } else { //commentDTOList 객체가 존재하지 않는 경우
+            return ResponseEntity.notFound().build(); //404 응답 코드 반환
+        }
+    }
+
 
 
     //-------------------------------------------------------------------------------------------------

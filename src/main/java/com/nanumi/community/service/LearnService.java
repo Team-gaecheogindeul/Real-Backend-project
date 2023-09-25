@@ -226,11 +226,35 @@ public class LearnService {
 
 //-------------------------------------------------------------------------------------------------------
 
-    //[#13. 댓글 상세 조회]
-//    @Transactional
-//    public Optional<CommentDTO> commentFindById(Long board_id) {
-//        Optional<CommentEntity> commentEntity = commentRepository.findById(board_id);
-//        return commentEntity.map(CommentDTO::toCommentDTO); //map() 메소드를 사용하여, Optional<CommentEntity> 내부의 commentEntity 객체가 존재할 경우에만 CommentDTO.tocommentDTO() 메소드를 호출하여 Optional<CommentDTO> 객체로 변환하였습니다.
-//
-//    }
+
+    // [#13. 댓글 상세 조회]
+    @Transactional
+    public List<CommentDTO> getCommentsAndChildComments(Long board_id) {
+        // 해당 게시글에 쓰인 모든 '부모댓글'을 리스트로 가져온다.
+        List<CommentEntity> parentCommentEntities = commentRepository.findByBoardId(board_id);
+
+        // parentCommentEntity 리스트를 'parentCommentDTO 리스트' 로 모두 변환
+        List<CommentDTO> parentCommentDTOs = parentCommentEntities.stream()
+                .map(CommentDTO::toCommentDTO)
+                .collect(Collectors.toList());
+
+        // 각 CommentDTO 에 대해 특정 부모댓글에 대한 ->  자식 댓글들도 조회하여 설정
+        for (CommentDTO parentCommentDTO : parentCommentDTOs) {
+            Long parentCommentId = parentCommentDTO.getComment_id();
+            List<CommentEntity> childCommentEntities =
+                    commentRepository.findByParentCommentEntity_Id(parentCommentId);
+
+            // ChildCommentEntity 리스트를 'ChildCommentDTO리스트'로 변환
+            List<CommentDTO> childCommentDTOS = childCommentEntities.stream()
+                    .map(CommentDTO::toCommentDTO)
+                    .collect(Collectors.toList());
+
+            //부모 댓글 DTO에 자식 댓글 DTO들 설정
+            parentCommentDTO.setChildComments(childCommentDTOS);
+        }
+
+        return parentCommentDTOs;
+    }
+
+
 }
