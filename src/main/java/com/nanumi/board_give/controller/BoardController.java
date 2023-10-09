@@ -3,6 +3,7 @@ package com.nanumi.board_give.controller;
 
 import com.nanumi.board_give.dto.BoardDTO;
 import com.nanumi.board_give.service.BoardService;
+import com.nanumi.recommend.service.GiveRecommendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ public class BoardController {
 
     //[BoardService 객체 선언]
     private final BoardService boardService;
+    private final GiveRecommendService giveRecommendService;
 
     //[#1. (개인) 나눔 게시글 등록 ]
     @PostMapping(value = "/posting/sharing", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -78,8 +80,9 @@ public class BoardController {
 
     //[#3. (타인 & 개인) 나눔 게시글 상세 조회]
     @GetMapping(value = {"/posting/sharing", "/profile/sharing"}, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> give_posting_findById(@RequestParam("board_give_id") Long board_give_id)  {
+    public ResponseEntity<Map<String, Object>> give_posting_findById(@RequestParam("user_seq") String user_seq, @RequestParam("board_give_id") Long board_give_id)  {
         Optional<BoardDTO> optionalBoardDTO = boardService.give_posting_findById(board_give_id);
+        giveRecommendService.saveviewlog(user_seq, board_give_id);
         if (optionalBoardDTO.isPresent()) { //Optional<BoardDTO> 객체 내부에 BoardDTO 객체가 존재하는 경우
             BoardDTO boardDTO = optionalBoardDTO.get();
             Map<String, Object> response = new HashMap<>();
@@ -186,6 +189,18 @@ public class BoardController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "삭제 완료");
         return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
+    }
+
+    @GetMapping(value = "/giverecommend", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String,Object>> getRecommendedBoardId(@RequestParam("user_seq") String user_seq) {
+        List<BoardDTO> recommendResult = giveRecommendService.recommendedboardid(user_seq);
+        if (recommendResult.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            Map<String, Object> response = new HashMap<>();
+            response.put("recommendResult", recommendResult);
+            return ResponseEntity.ok(response);
+        }
     }
 
 }

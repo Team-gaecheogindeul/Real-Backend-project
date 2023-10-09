@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface FreeRepository extends JpaRepository<FreeEntity,Long> {
 
     //[#4. 게시글 전체 조회]
@@ -21,6 +23,13 @@ public interface FreeRepository extends JpaRepository<FreeEntity,Long> {
     // [#9. 검색기능 ]
     @Query("SELECT b FROM FreeEntity b WHERE b.board_title LIKE %:keyword% OR b.board_story LIKE %:keyword%")
     Page<FreeEntity> findByKeyword(String keyword, Pageable pageable);
+
+    @Query(nativeQuery = true, value =
+            "SELECT cb.* FROM community_board cb " +
+                    "INNER JOIN chat_board ch ON cb.board_id = ch.post_id " +
+                    "WHERE cb.DTYPE = 'FreeEntity' AND ch.new_category1 = :categoryId " +
+                    "ORDER BY RAND() LIMIT 3")
+    List<FreeEntity> findTop3ByCategoryIdRandom(@Param("categoryId") String categoryId);
 
 
 }

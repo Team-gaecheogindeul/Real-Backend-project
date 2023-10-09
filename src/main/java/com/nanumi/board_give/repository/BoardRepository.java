@@ -26,6 +26,8 @@ public interface BoardRepository extends JpaRepository<BoardEntity, Long> {
     @Query("SELECT b FROM BoardEntity b WHERE b.board_title LIKE %:keyword% OR b.book_story LIKE %:keyword%")
     Page<BoardEntity> findByKeyword(String keyword, Pageable pageable);
 
+    @Query(value="SELECT * FROM board_give_table WHERE category_id = :categoryId ORDER BY RAND() LIMIT 3", nativeQuery=true)
+    List<BoardEntity> findTop3ByCategoryIdRandom(@Param("categoryId") String categoryId);
 }
 
 
