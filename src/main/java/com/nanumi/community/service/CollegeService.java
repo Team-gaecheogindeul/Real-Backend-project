@@ -324,6 +324,7 @@ public class CollegeService {
     //-------------------------------------------------------------------------------------------------------
 
     //[#17. 대댓글 삭제]
+    @Transactional
     public void ChildCommentDelete(Long comment_id, String user_seq) {
         // 부모 댓글 찾기
         CommentEntity parentComment = commentRepository.findById(comment_id)
