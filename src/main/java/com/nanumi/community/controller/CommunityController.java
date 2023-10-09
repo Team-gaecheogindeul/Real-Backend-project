@@ -8,6 +8,7 @@ import com.nanumi.community.service.CollegeService;
 import com.nanumi.community.service.FreeService;
 import com.nanumi.community.service.LearnService;
 import com.nanumi.community.service.SchoolService;
+import com.nanumi.recommend.service.CommunityRecommendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,7 @@ public class CommunityController {
     private final LearnService learnService;
     private final SchoolService schoolService;
     private final CollegeService collegeService;
+    private final CommunityRecommendService communityRecommendService;
 
     //[#1. 게시글 등록 ] -저장 완료-
     @PostMapping(value = "/{type}Posting/", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -106,7 +108,7 @@ public class CommunityController {
     //------------------------------------------------------------------------------------------------------------------
     //[#3. 게시글 상세 조회] -----------------상세조회 성공-----------------
     @GetMapping(value = {"/{type}posting", "/{type}profile"}, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> postingFindById(@PathVariable String type, @RequestParam("board_id") Long board_id) {
+    public ResponseEntity<Map<String, Object>> postingFindById(@PathVariable String type, @RequestParam("user_seq") String user_seq /*추가*/, @RequestParam("board_id") Long board_id) {
         Optional<CommunityDTO> optionalCommunityDTO; // 초기화하지 않음
 
     /*
@@ -133,6 +135,7 @@ public class CommunityController {
 
         if (optionalCommunityDTO.isPresent()) {
             CommunityDTO communityDTO = optionalCommunityDTO.get();
+            communityRecommendService.saveviewlog(user_seq, board_id);
             Map<String, Object> response = new HashMap<>();
             response.put("communityDTO", communityDTO); //response 에 Key 값 으로 boardDTO 를 저장하고, boardDTO 객체를 value 값으로 주입
             return ResponseEntity.ok(response); //200응답 코드와 같이 출력
@@ -568,6 +571,20 @@ public class CommunityController {
         response.put("message", "삭제 완료");
         return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
         }
+
+
+    @GetMapping(value = "/{type}communityrecommend", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String,Object>> getRecommendedBoardId(@PathVariable String type,@RequestParam("user_seq") String user_seq){
+
+        List<CommunityDTO> recommendResult = communityRecommendService.recommendedboardid(user_seq, type);
+        if (recommendResult.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            Map<String, Object> response = new HashMap<>();
+            response.put("recommendResult", recommendResult);
+            return ResponseEntity.ok(response);
+        }
+    }
 }
 
 
