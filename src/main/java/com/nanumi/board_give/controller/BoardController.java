@@ -176,6 +176,18 @@ public class BoardController {
         //클라이언트에게 페이지 관련 정보 없이 실제 데이터만 전달하려면, Page.getContent() 메소드를 사용하여 content 내용만 추출하면 됩니다.
         return ResponseEntity.ok(response); //이 코드는 맵 객체를 반환합니다. 이 때 ResponseEntity.ok() 를 사용하여 HTTP 응답 코드 200(성공)과 함께 맵 객체를 반환합니다.
     }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#11. (개인) 나눔 게시글 삭제]
+    @DeleteMapping(value = "/profile/sharing/delete", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> deletePosting(@RequestParam("board_give_id") Long board_give_id) {
+        boardService.deletePosting(board_give_id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "삭제 완료");
+        return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
+    }
+
 }
 
 

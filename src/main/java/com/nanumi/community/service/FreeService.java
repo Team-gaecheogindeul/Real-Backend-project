@@ -243,6 +243,7 @@ public Optional<CommunityDTO> postingFindById(Long board_id) {
     //-------------------------------------------------------------------------------------------------------
 
     // [#11. 댓글 입력]
+    @Transactional
     public void CommentSave(CommentDTO commentDTO) {
 
         CommentEntity commentEntity = CommentEntity.toSaveEntity(commentDTO); //DTO -> Entity 변환
@@ -331,39 +332,96 @@ Detached: JPA가 더 이상 관리하지 않는 상태
     //-------------------------------------------------------------------------------------------------------
 
     //[#14. 댓글 수정]
-//    @Transactional
-//    public void updatePartOfComment(Long board_id, String user_seq, CommunityDTO communityDTO) {
-//        //요청된 게시물의 '게시글 번호' 로 -----> 기존 게시물 '댓글 엔티티' 조회
-//        Optional<CommentEntity> optionalCommentEntity = commentRepository.findById(board_id);
-//
-//        if(optionalFreeEntity.isPresent()) { // 게시글 엔티티가 존재시, 해당 데이터들을 모두 불러온다.
-//            FreeEntity freeEntity = optionalFreeEntity.get();
-//
-//            //#1. CommunityDTO 로부터 받은 값이 있는 경우 : 그 값(communityDTO.getBoard_title())을 freeEntity 에 설정
-//            //만약, CommunityDTO 로부터 값을 못 받은 경우 : 기존 값(freeEntity.getBoard_title()))을 freeEntity 에 설정
-//            freeEntity.setBoard_title(Optional.ofNullable(communityDTO.getBoard_title()).orElse(freeEntity.getBoard_title())); // 게시글 제목
-//            freeEntity.setUser_seq(Optional.ofNullable(communityDTO.getUser_seq()).orElse(freeEntity.getUser_seq())); // 회원 일련번호
-//            freeEntity.setCategory_id(Optional.ofNullable(communityDTO.getCategory_id()).orElse(freeEntity.getCategory_id())); //카테고리 아이디
-//            freeEntity.setBoard_story(Optional.ofNullable(communityDTO.getBoard_story()).orElse(freeEntity.getBoard_story())); // 게시글 내용
-//            freeEntity.setUserGrade(Optional.ofNullable(communityDTO.getUserGrade()).orElse(freeEntity.getUserGrade())); // 사용자 등급
-//            freeEntity.setNickName(Optional.ofNullable(communityDTO.getNickName()).orElse(freeEntity.getNickName())); // 사용자 닉네임
-//            freeEntity.setDate(Optional.ofNullable(communityDTO.getDate()).orElse(freeEntity.getDate())); // 게시글 작성 시간(날짜)
-//            freeEntity.setUserImageUrl(Optional.ofNullable(communityDTO.getUserImageUrl()).orElse(freeEntity.getUserImageUrl())); //사용자 프로필 이미지
-//            freeEntity.setLikeCount(Optional.ofNullable(communityDTO.getLikeCount()).orElse(freeEntity.getLikeCount())); // 좋아요 갯수
-//            freeEntity.setId(freeEntity.getId()); // 게시글 번호 (그대로 유지)
-//            // 추가 이미지들이 여러장 존재 시
-//            if (communityDTO.getBoardImageUrls() != null) {
-//                List<String> updatedImages = new ArrayList<>(freeEntity.getBoardImages()); // 기존 이미지를 가지는 새로운 이미지 객체 생성
-//                updatedImages.addAll(communityDTO.getBoardImageUrls());
-//                freeEntity.setBoardImages(updatedImages);
-//            } // 추가 이미지들이 없을 때
-//            freeEntity.setBoardImages(freeEntity.getBoardImages()); // 기존 이미지만 다시 세팅
-//
-//            //#2.  변경된 게시물 엔티티 저장
-//            freeRepository.save(freeEntity);
-//
-//        } else { //해당 ID의 엔티티(기존 게시글)가 존재하지 않는다면 NoSuchElementException 을 발생시켜, 이 메소드를 호출한 곳에서 이 예외를 처리할 수 있도록 합니다.
-//            throw new NoSuchElementException("No Board found with id: " + board_id);
-//        }
-//    }
+    @Transactional
+    public void CommentUpdate(CommentDTO commentDTO) {
+        //commentRepository 라는 JPA Repository 인터페이스를 통해 데이터베이스에서 ID가 commentDTO.getComment_id()인 댓글 엔티티(CommentEntity)를 찾기.
+        CommentEntity originalComment = commentRepository.findById(commentDTO.getComment_id())
+                .orElseThrow(() -> new IllegalArgumentException("No comment found with id: " + commentDTO.getComment_id()));
+
+        // Assuming Comment entity has a method to update its fields from a DTO
+        originalComment.updateFromDTO(commentDTO);
+
+        // 변경된 originalComment 엔티티를 저장
+        commentRepository.save(originalComment);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#15. 대댓글 수정]
+    @Transactional
+    public void ChildCommentUpdate(Long commentId, String user_seq, CommentDTO commentDTO) {
+        /*
+        대댓글 수정에 대한 코드를 작성하기 위해서는 먼저 부모 댓글을 찾아야 합니다.
+        그 후, 해당 부모 댓글 아래의 대댓글 목록에서 수정하고자 하는 대댓글을 찾아야 합니다.
+        이후에는 데이터베이스에 접근하여 해당 대댓글의 내용을 업데이트하면 됩니다.
+         */
+        // 부모 댓글 찾기
+        CommentEntity parentComment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("No parent comment found with id: " + commentId));
+
+        // 부모댓글의 대댓글 목록에서, 수정하고자 하는 대댓글을 찾아야 한다. by user_seq 를 이용
+        CommentEntity childComment = parentComment.getChildComments().stream()
+                .filter(c -> c.getUserSeq().equals(user_seq))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No child comment found with user sequence: " + user_seq));
+
+        // Assuming Comment entity has a method to update its fields from a DTO
+        childComment.updateFromDTO(commentDTO);
+
+        // Save the updated entities back to the database.
+        // As we're using JPA and these entities are already managed,
+        // we don't necessarily need to call save() again.
+        // But we can still do it for clarity.
+        commentRepository.save(parentComment); //부모댓글 저장
+        commentRepository.save(childComment); //자식댓글 저장
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    //#16. 댓글 삭제]
+    @Transactional
+    public void CommentDelete(Long comment_id) {
+        // commentRepository라는 JPA Repository 인터페이스를 통해 데이터베이스에서 ID가 commentId인 댓글 엔티티(CommentEntity)를 찾기.
+        CommentEntity comment = commentRepository.findById(comment_id)
+                .orElseThrow(() -> new IllegalArgumentException("No comment found with id: " + comment_id));
+
+        // 해당 댓글 엔티티를 삭제
+        commentRepository.delete(comment);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#18. 게시글 삭제]
+    @Transactional
+    public void deletePosting(Long board_id) {
+        // 먼저, 해당 ID를 가진 게시글이 데이터베이스에 존재하는지 확인합니다.
+        // 만약 존재하지 않는다면, IllegalArgumentException을 발생시킵니다.
+        if (!freeRepository.existsById(board_id)) {
+            throw new IllegalArgumentException("No posting found with id: " + board_id);
+        }
+
+        // 해당 ID를 가진 게시글을 삭제합니다.
+        freeRepository.deleteById(board_id);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#17. 대댓글 삭제]
+    public void ChildCommentDelete(Long comment_id, String user_seq) {
+        // 부모 댓글 찾기
+        CommentEntity parentComment = commentRepository.findById(comment_id)
+                .orElseThrow(() -> new IllegalArgumentException("No parent comment found with id: " + comment_id));
+
+        // 부모댓글의 대댓글 목록에서, 수정하고자 하는 대댓글을 찾아야 한다. by user_seq 를 이용
+        CommentEntity childComment = parentComment.getChildComments().stream()
+                .filter(c -> c.getUserSeq().equals(user_seq))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No child comment found with user sequence: " + user_seq));
+
+
+        commentRepository.delete(childComment);
+    }
+
+
+    //-------------------------------------------------------------------------------------------------------
+
 }

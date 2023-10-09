@@ -21,18 +21,11 @@
 7. 파일(이미지)첨부하기 
    - 단일 파일 첨부
    - 다중 파일 첨부
-   - 파일 첨부와 관련하여 추가될 부분들  
-     - save.html  
-     - BoardDTO  
-     - BoardService.save()  
-     - BoardEntity
-     - BoardFileEntity, BoardFileRepository 추가
-     - detail.html
    - github에 올려놓은 코드를 보시고 어떤 부분이 바뀌는지 잘 살펴봐주세요. 
 
     - board_table(부모) - board_file_table(자식)
 
-# 게시판 주요기능 (받아요)
+# 커뮤니티 주요기능
 
 
 ```

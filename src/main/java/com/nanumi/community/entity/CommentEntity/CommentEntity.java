@@ -78,6 +78,11 @@ public class CommentEntity {
     @OneToMany(mappedBy="parentCommentEntity", cascade=CascadeType.ALL, orphanRemoval=true )
     @JsonManagedReference  // 이 줄 추가: 순환 참조 방지용 어노테이션
     List<CommentEntity> childComments = new ArrayList<>();
+    /*
+    mappedBy="parentCommentEntity": 이 속성은 양방향 관계에서 주인이 아닌 쪽에서 사용하며, 연관관계의 주인 필드 이름을 값으로 설정합니다. 여기서는 parentCommentEntity가 연관관계의 주인입니다.
+    cascade=CascadeType.ALL: 이 속성은 부모 엔티티가 수행하는 데이터베이스 작업을 자식 엔티티에게도 전파시킵니다. 여기서는 부모 댓글이 삭제될 때 자식 댓글들도 함께 삭제되도록 설정하였습니다.
+    orphanRemoval=true: 이 속성은 부모 엔티티와 연결되지 않은 (즉, 고아가 된) 자식 엔티티를 자동으로 삭제합니다.
+     */
 
 
     //[DTO 객체 -> Entity 객체 변환]
@@ -109,4 +114,46 @@ public class CommentEntity {
     public void setParent(CommentEntity parentCommentEntity) {
         this.parentCommentEntity = parentCommentEntity;
     }
+
+
+    //[#14 .댓글 수정]
+    public void updateFromDTO(CommentDTO commentDTO) {
+        // CommentEntity 의 각 필드를 CommentDTO 로부터 받은 값으로 업데이트
+        // 만약 DTO 에 해당 필드의 값이 없다면 (null), 기존 값을 그대로 유지
+
+        if (commentDTO.getComment_id() != null) {
+            this.setId(commentDTO.getComment_id());
+        }
+
+        if (commentDTO.getBoard_id() != null) {
+            this.setBoardId(commentDTO.getBoard_id());
+        }
+
+        if (commentDTO.getUser_seq() != null) {
+            this.setUserSeq(commentDTO.getUser_seq());
+        }
+
+        if (commentDTO.getContent() != null) {
+            this.setContent(commentDTO.getContent());
+        }
+
+        if (commentDTO.getNickName() != null) {
+            this.setNickName(commentDTO.getNickName());
+        }
+
+        if (commentDTO.getUserImageUrl() != null) {
+            this.setUserImageUrl(commentDTO.getUserImageUrl());
+        }
+
+        // contentImageUrls는 List<String> 형태이므로, 새 ArrayList 인스턴스를 생성하여 대입
+        // 만약 DTO에 이미지 URL 리스트가 없다면, 기존 값을 그대로 유지
+        //, 이미지 URL 리스트(contentImageUrls)도 비어있는 리스트가 아닌 경우에만 업데이트합니다. 이렇게 하면 빈 리스트가 제공되었을 때 기존 이미지 URL들을 삭제하는 것을 방지할 수 있습니다.
+        if (commentDTO.getContentImageUrls() != null && !commentDTO.getContentImageUrls().isEmpty()) {
+            this.setContentImageUrls(new ArrayList<>(commentDTO.getContentImageUrls()));
+        }
+        /*
+        부모 댓글(parentCommentEntity)과 자식 댓글 목록(childComments)은 별도의 처리가 필요하며, 이 부분은 당신의 애플리케이션 로직에 따라 다르게 구현될 수 있습니다.
+         */
+    }
+
 }

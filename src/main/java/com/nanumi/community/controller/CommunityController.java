@@ -435,32 +435,139 @@ public class CommunityController {
 
 
     //-------------------------------------------------------------------------------------------------
-    //[#13. 댓글 수정(커뮤니티별) & 게시글 수정과 같이 호출 되어야 한다.]
+    //[#14. 댓글 수정]
+    @PutMapping(value = "/{type}Posting/Comment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> CommentUpdate(@PathVariable String type, @RequestBody CommentDTO commentDTO) {
+        switch (type) {
+            case "Free":
+                freeService.CommentUpdate(commentDTO);
+                break;
+            case "Learn":
+                learnService.CommentUpdate(commentDTO);
+                break;
+            case "School":
+                schoolService.CommentUpdate(commentDTO);
+                break;
+            case "College":
+                collegeService.CommentUpdate(commentDTO);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "댓글 수정 완료");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
-//    @PostMapping(value = "/{type}profile/update/Comment", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<Object> updatePartOfComment(@RequestBody CommentDTO commentDTO,@PathVariable String type,
-//                                                    @RequestParam("board_id") Long board_id, @RequestParam("user_seq") String user_seq) {
-//
-//        switch (type) {
-//            case "Free": // 사용자가 입력한 정보를 토대로 기존 게시물의 일부 데이터를 업데이트합니다.
-//                freeService.updatePartOfComment(board_id, user_seq, commentDTO);
-//                break;
-//            case "Learn":
-//                learnService.updatePartOfComment(board_id, commentDTO);
-//                break;
-//            case "School":
-//                schoolService.updatePartOfComment(board_id, commentDTO);
-//                break;
-//            case "College":
-//                collegeService.updatePartOfComment(board_id, commentDTO);
-//                break;
-//            default:
-//                throw new IllegalArgumentException("Invalid type: " + type);
-//        }
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("message", "댓글 수정 완료");
-//        return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
-//    }
+    //-------------------------------------------------------------------------------------------------------
+    //[#15. 대댓글 수정] -> commentDTO 에 parentCommentId 값을 반드시 있어야 한다.
+    @PutMapping(value = "/{type}Posting/ChildComment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> ChildCommentUpdate(@PathVariable String type, @RequestParam("comment_id") Long comment_id,
+                                                     @RequestParam("user_seq") String user_seq, @RequestBody CommentDTO commentDTO) {
+
+        switch (type) {
+            case "Free":
+                freeService.ChildCommentUpdate(comment_id, user_seq, commentDTO);
+                break;
+            case "Learn":
+                learnService.ChildCommentUpdate(comment_id, user_seq, commentDTO);
+                break;
+            case "School":
+                schoolService.ChildCommentUpdate(comment_id, user_seq, commentDTO);
+                break;
+            case "College":
+                collegeService.ChildCommentUpdate(comment_id, user_seq, commentDTO);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: "+ type);
+        }
+
+        Map<String,Object> response=new HashMap<>();
+        response.put("message","대댓글 수정 완료");
+
+        return new ResponseEntity<>(response ,HttpStatus.OK);
+    }
+
+    //------------------------------------------------------------------------------------------------------------
+
+    //[#16. 댓글 삭제] ---> 관련 대댓글들도 모두 삭제된다.
+    @DeleteMapping(value="/{type}Posting/Comment", produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> CommentDelete(@PathVariable String type, @RequestParam("comment_id") Long comment_id){
+
+        switch(type){
+            case "Free":
+                freeService.CommentDelete(comment_id);
+                break;
+            case "Learn":
+                learnService.CommentDelete(comment_id);
+                break;
+            case "School":
+                schoolService.CommentDelete(comment_id);
+                break;
+            case "College":
+                collegeService.CommentDelete(comment_id);
+                break;
+            default:throw new IllegalArgumentException("Invalid Type:"+type);
+
+        }
+
+        Map<String,Object> response=new HashMap<>();
+        response.put("message","댓글 삭제 완료");
+
+        return new ResponseEntity<>(response ,HttpStatus.OK);
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------
+
+    //[#17. 대댓글 삭제]
+    @DeleteMapping(value="/{type}Posting/ChildComment", produces=MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> ChildCommentDelete(@PathVariable String type,@RequestParam("comment_id") Long comment_id,
+                                                     @RequestParam("user_seq") String user_seq){
+
+        switch(type){
+            case"Free": freeService.ChildCommentDelete(comment_id,user_seq);break;
+            case"Learn": learnService.ChildCommentDelete(comment_id,user_seq);break;
+            case"School": schoolService.ChildCommentDelete(comment_id,user_seq);break;
+            case"College": collegeService.ChildCommentDelete(comment_id,user_seq);break;
+            default:throw new IllegalArgumentException("Invalid Type:"+type);
+
+        }
+
+        Map<String,Object> response=new HashMap<>();
+        response.put("message","대댓글 삭제 완료");
+
+        return new ResponseEntity<>(response ,HttpStatus.OK);
+
+    }
+
+//-----------------------------------------------------------------------------------------------------------------
+
+    //[#18. 게시글 삭제]
+    @DeleteMapping(value = "/{type}profile", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> deletePosting(@PathVariable String type, @RequestParam("board_id") Long board_id) {
+
+        switch (type) {
+            case "Free":
+                freeService.deletePosting(board_id);  //서비스 객체에서 조회한 데이터 여러개를 DTO 객체에 담아서 List 자료구조에 주입
+                break;
+            case "Learn":
+                learnService.deletePosting(board_id);
+                break;
+            case "School":
+                schoolService.deletePosting(board_id);
+                break;
+            case "College":
+                collegeService.deletePosting(board_id);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid type: " + type);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "삭제 완료");
+        return new ResponseEntity<>(response, HttpStatus.OK); //200 응답코드 반환
+        }
 }
 
 
