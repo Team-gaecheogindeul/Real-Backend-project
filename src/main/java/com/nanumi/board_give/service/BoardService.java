@@ -284,6 +284,20 @@ public class BoardService {
                 .collect(Collectors.toList()); // collect 메서드를 통해 다시 리스트 형태로 변환하여 boardDTOList 에 저장
         return new PageImpl<>(boardDTOList, pageable, boardEntityList.getTotalElements());
     }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    // [#11. 게시글 삭제]
+    public void deletePosting(Long board_give_id) {
+        // 먼저, 해당 ID를 가진 게시글이 데이터베이스에 존재하는지 확인합니다.
+        // 만약 존재하지 않는다면, IllegalArgumentException을 발생시킵니다.
+        if (!boardRepository.existsById(board_give_id)) {
+            throw new IllegalArgumentException("No posting found with id: " + board_give_id);
+        }
+
+        // 해당 ID를 가진 게시글을 삭제합니다.
+        boardRepository.deleteById(board_give_id);
+    }
 }
 
 

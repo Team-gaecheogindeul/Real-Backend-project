@@ -254,7 +254,100 @@ public class LearnService {
         }
 
         return parentCommentDTOs;
+
+
     }
+
+
+    //-------------------------------------------------------------------------------------------------------
+    //[#14.댓글 수정]
+
+    public void CommentUpdate(CommentDTO commentDTO) {
+        //commentRepository 라는 JPA Repository 인터페이스를 통해 데이터베이스에서 ID가 commentDTO.getComment_id()인 댓글 엔티티(CommentEntity)를 찾기.
+        CommentEntity originalComment = commentRepository.findById(commentDTO.getComment_id())
+                .orElseThrow(() -> new IllegalArgumentException("No comment found with id: " + commentDTO.getComment_id()));
+
+        // Assuming Comment entity has a method to update its fields from a DTO
+        originalComment.updateFromDTO(commentDTO);
+
+        // 변경된 originalComment 엔티티를 저장
+        commentRepository.save(originalComment);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#15. 대댓글 수정]
+    @Transactional
+    public void ChildCommentUpdate(Long commentId, String user_seq, CommentDTO commentDTO) {
+        /*
+        대댓글 수정에 대한 코드를 작성하기 위해서는 먼저 부모 댓글을 찾아야 합니다.
+        그 후, 해당 부모 댓글 아래의 대댓글 목록에서 수정하고자 하는 대댓글을 찾아야 합니다.
+        이후에는 데이터베이스에 접근하여 해당 대댓글의 내용을 업데이트하면 됩니다.
+         */
+        // 부모 댓글 찾기
+        CommentEntity parentComment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("No parent comment found with id: " + commentId));
+
+        // 부모댓글의 대댓글 목록에서, 수정하고자 하는 대댓글을 찾아야 한다. by user_seq 를 이용
+        CommentEntity childComment = parentComment.getChildComments().stream()
+                .filter(c -> c.getUserSeq().equals(user_seq))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No child comment found with user sequence: " + user_seq));
+
+        // Assuming Comment entity has a method to update its fields from a DTO
+        childComment.updateFromDTO(commentDTO);
+
+        // Save the updated entities back to the database.
+        // As we're using JPA and these entities are already managed,
+        // we don't necessarily need to call save() again.
+        // But we can still do it for clarity.
+        commentRepository.save(parentComment); //부모댓글 저장
+        commentRepository.save(childComment); //자식댓글 저장
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //[#17. 대댓글 삭제]
+    public void ChildCommentDelete(Long comment_id, String user_seq) {
+        // 부모 댓글 찾기
+        CommentEntity parentComment = commentRepository.findById(comment_id)
+                .orElseThrow(() -> new IllegalArgumentException("No parent comment found with id: " + comment_id));
+
+        // 부모댓글의 대댓글 목록에서, 수정하고자 하는 대댓글을 찾아야 한다. by user_seq 를 이용
+        CommentEntity childComment = parentComment.getChildComments().stream()
+                .filter(c -> c.getUserSeq().equals(user_seq))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No child comment found with user sequence: " + user_seq));
+
+
+        commentRepository.delete(childComment);
+    }
+
+    //-------------------------------------------------------------------------------------------------------
+
+    //#16. 댓글 삭제]
+    public void CommentDelete(Long comment_id) {
+        // commentRepository라는 JPA Repository 인터페이스를 통해 데이터베이스에서 ID가 commentId인 댓글 엔티티(CommentEntity)를 찾기.
+        CommentEntity comment = commentRepository.findById(comment_id)
+                .orElseThrow(() -> new IllegalArgumentException("No comment found with id: " + comment_id));
+
+        // 해당 댓글 엔티티를 삭제
+        commentRepository.delete(comment);
+    }
+
+    //----------------------------------------------------------------------------------------------------------
+    //[#18. 게시글 삭제]
+    public void deletePosting(Long board_id) {
+        // 먼저, 해당 ID를 가진 게시글이 데이터베이스에 존재하는지 확인합니다.
+        // 만약 존재하지 않는다면, IllegalArgumentException을 발생시킵니다.
+        if (!learnRepository.existsById(board_id)) {
+            throw new IllegalArgumentException("No posting found with id: " + board_id);
+        }
+
+        // 해당 ID를 가진 게시글을 삭제합니다.
+        learnRepository.deleteById(board_id);
+    }
+
 
 
 }
