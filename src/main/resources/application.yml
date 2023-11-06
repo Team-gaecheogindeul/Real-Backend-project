@@ -13,7 +13,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/db_book?serverTimezone=Asia/Seoul&characterEncoding=UTF-8 #이 URL은 "현재 장치에서 실행 중인 MySQL 서버의 3306 포트에 있는 'db_book' 데이터베이스에 연결하고, 서버 시간대를 'Asia/Seoul'로 설정하며, 문자 인코딩으로 UTF-8을 사용해라" 라는 의미가 됩니다.
-    username: nanumi
+    username: root
     password: rocjrdlsemf1234!H
   thymeleaf:
     check-template-location: false
@@ -25,4 +25,3 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
-
