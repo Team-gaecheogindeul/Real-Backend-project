@@ -35,7 +35,7 @@ public class CommunityRecommendService {
     static List<String> categories = Arrays.asList("공부", "일상");
     public void saveviewlog(String user_seq, Long board_id) {
 
-        Optional<CommunityCategoryEntity> ComOptional = communityCategoryRepository.findById(board_id);
+        Optional<CommunityCategoryEntity> ComOptional = communityCategoryRepository.findById(board_id); // 카테고리 2개 받아오기 (예진이가 만든 테이블에서)
 
         if (ComOptional.isPresent()) {
 
@@ -109,7 +109,7 @@ public class CommunityRecommendService {
 
         Map<String, Float> likeddistribution = new HashMap<>();
 
-        // 사용자의 좋아요 목록을 가져옵니다.
+        // 사용자의 좋아요 목록을 가져옵니다. (UsersLikesCommunityRepository = userComLikeRepository) 에서
         CommunityLikesEntity userLikeList = userComLikeRepository.findByUserSeq(user_seq)
                 .orElseThrow(() -> new DataNotFoundException("Invalid user_seq: " + user_seq));
 
